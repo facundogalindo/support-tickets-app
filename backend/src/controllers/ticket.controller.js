@@ -1,6 +1,7 @@
 const {
   getAllTickets,
   getTicketById,
+  createNewTicket,
 } = require("../services/ticket.service");
 
 const getTickets = (req, res) => {
@@ -19,7 +20,17 @@ const getTicket = (req, res) => {
   res.json(ticket);
 };
 
+const createTicket = (req, res) => {
+  try {
+    const newTicket = createNewTicket(req.body);
+    res.status(201).json(newTicket);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTickets,
   getTicket,
+  createTicket,
 };
