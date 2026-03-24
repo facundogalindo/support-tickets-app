@@ -14,3 +14,4 @@ app.get("/", (req, res) => {
 app.use("/tickets", ticketRoutes);
 
 module.exports = app;
+

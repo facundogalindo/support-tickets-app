@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "title": "No funciona el correo corporativo",
+    "description": "El usuario no puede enviar ni recibir emails.",
+    "priority": "alta",
+    "status": "abierto",
+    "createdAt": "2026-03-24"
+  },
+  {
+    "id": 2,
+    "title": "Problema con acceso a VPN",
+    "description": "La conexión se corta al intentar ingresar.",
+    "priority": "media",
+    "status": "en progreso",
+    "createdAt": "2026-03-24"
+  }
+]
