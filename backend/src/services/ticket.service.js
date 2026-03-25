@@ -2,7 +2,8 @@ const {
   findAllTickets,
   findTicketById,
   createTicket,
-  updateTicketStatus
+  updateTicketStatus,
+  deleteTicketById,
 } = require("../repositories/ticket.repository");
 
 const generateId = require("../utils/generateId");
@@ -53,11 +54,17 @@ const createNewTicket = ({ title, description, priority }) => {
   };
 
   return createTicket(newTicket);
+  
 };
+const deleteTicketService = (id) => {
+  return deleteTicketById(id);
+};
+
 
 module.exports = {
   getAllTickets,
   getTicketById,
   createNewTicket,
   updateTicketStatusService,
+  deleteTicketService,
 };

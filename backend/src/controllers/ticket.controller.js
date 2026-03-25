@@ -3,6 +3,7 @@ const {
   getTicketById,
   createNewTicket,
   updateTicketStatusService,
+  deleteTicketService
 } = require("../services/ticket.service");
 
 const getTickets = (req, res) => {
@@ -45,10 +46,22 @@ const createTicket = (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+const deleteTicketController = (req, res) => {
+  const id = Number(req.params.id);
+  const deleted = deleteTicketService(id);
+
+  if (!deleted) {
+    return res.status(404).json({ message: "Ticket no encontrado" });
+  }
+
+  res.json(deleted);
+};
+
 
 module.exports = {
   getTickets,
   getTicket,
   createTicket,
-  updateTicketStatusController
+  updateTicketStatusController,
+  deleteTicketController,
 };

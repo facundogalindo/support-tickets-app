@@ -23,9 +23,23 @@ const updateTicketStatus = (id, status) => {
   return ticket;
 };
 
+const deleteTicketById = (id) => {
+  const index = tickets.findIndex((ticket) => ticket.id === id);
+
+  if (index === -1) {
+    return null;
+  }
+
+  const deletedTicket = tickets[index];
+  tickets.splice(index, 1);
+
+  return deletedTicket;
+};
+
 module.exports = {
   findAllTickets,
   findTicketById,
   createTicket,
-  updateTicketStatus
+  updateTicketStatus,
+  deleteTicketById
 };
