@@ -1,0 +1,49 @@
+
+type TicketFormProps = {
+  title: string;
+  description: string;
+  priority: string;
+  setTitle: React.Dispatch<React.SetStateAction<string>>;
+  setDescription: React.Dispatch<React.SetStateAction<string>>;
+  setPriority: React.Dispatch<React.SetStateAction<string>>;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+};
+
+function TicketForm({
+  title,
+  description,
+  priority,
+  setTitle,
+  setDescription,
+  setPriority,
+  handleSubmit,
+}: TicketFormProps) {
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Crear ticket</h2>
+
+      <input
+        type="text"
+        placeholder="Título"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+
+      <textarea
+        placeholder="Descripción"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+
+      <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+        <option value="baja">Baja</option>
+        <option value="media">Media</option>
+        <option value="alta">Alta</option>
+      </select>
+
+      <button type="submit">Crear ticket</button>
+    </form>
+  );
+}
+
+export default TicketForm;
