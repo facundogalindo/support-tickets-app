@@ -2,6 +2,7 @@ const {
   findAllTickets,
   findTicketById,
   createTicket,
+  updateTicketStatus
 } = require("../repositories/ticket.repository");
 
 const generateId = require("../utils/generateId");
@@ -12,6 +13,21 @@ const getAllTickets = () => {
 
 const getTicketById = (id) => {
   return findTicketById(id);
+};
+const updateTicketStatusService = (id, status) => {
+  const validStatuses = ["abierto", "en progreso", "cerrado"];
+
+  if (!validStatuses.includes(status)) {
+    throw new Error("Estado inválido");
+  }
+
+  const updated = updateTicketStatus(id, status);
+
+  if (!updated) {
+    return null;
+  }
+
+  return updated;
 };
 
 const createNewTicket = ({ title, description, priority }) => {
@@ -43,4 +59,5 @@ module.exports = {
   getAllTickets,
   getTicketById,
   createNewTicket,
+  updateTicketStatusService,
 };

@@ -2,6 +2,7 @@ const {
   getAllTickets,
   getTicketById,
   createNewTicket,
+  updateTicketStatusService,
 } = require("../services/ticket.service");
 
 const getTickets = (req, res) => {
@@ -19,6 +20,22 @@ const getTicket = (req, res) => {
 
   res.json(ticket);
 };
+const updateTicketStatusController = (req, res) => {
+  const id = Number(req.params.id);
+  const { status } = req.body;
+
+  try {
+    const updated = updateTicketStatusService(id, status);
+
+    if (!updated) {
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
 const createTicket = (req, res) => {
   try {
@@ -33,4 +50,5 @@ module.exports = {
   getTickets,
   getTicket,
   createTicket,
+  updateTicketStatusController
 };
