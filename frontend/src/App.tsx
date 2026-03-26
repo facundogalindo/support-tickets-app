@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import "./App.css";
 import type { Ticket } from "./types/ticket";
 import {
@@ -17,6 +16,8 @@ function App() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("media");
+  const [formError, setFormError] = useState("");
+
 const getTickets = async () => {
   try {
     const data = await getTicketsRequest();
@@ -26,7 +27,14 @@ const getTickets = async () => {
   }
 };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+
   e.preventDefault();
+
+  if (!title.trim() || !description.trim() || !priority) {
+    setFormError("Todos los campos son obligatorios");
+  return;
+  }
+  setFormError("");
 
   try {
       await createTicketRequest({
@@ -93,6 +101,7 @@ return (
       setDescription={setDescription}
       setPriority={setPriority}
       handleSubmit={handleSubmit}
+      formError={formError}
     />
 
     {tickets.length === 0 ? (

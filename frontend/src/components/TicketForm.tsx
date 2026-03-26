@@ -7,6 +7,7 @@ type TicketFormProps = {
   setDescription: React.Dispatch<React.SetStateAction<string>>;
   setPriority: React.Dispatch<React.SetStateAction<string>>;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  formError: string;
 };
 
 function TicketForm({
@@ -17,10 +18,12 @@ function TicketForm({
   setDescription,
   setPriority,
   handleSubmit,
+  formError
 }: TicketFormProps) {
   return (
     <form onSubmit={handleSubmit}>
       <h2>Crear ticket</h2>
+      {formError && <p className="form-error">{formError}</p>}
 
       <input
         type="text"
