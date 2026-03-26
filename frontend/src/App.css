@@ -34,3 +34,70 @@ h1 {
   border-radius: 8px;
   margin: 10px 0;
 }
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-priority.alta {
+  background-color: #ffe5e5;
+  color: #b00020;
+}
+
+.badge-priority.media {
+  background-color: #fff4e5;
+  color: #ff8c00;
+}
+
+.badge-priority.baja {
+  background-color: #e5f7e5;
+  color: #2e7d32;
+}
+.badge-status.abierto {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-status.en-progreso {
+  background-color: #ede7f6;
+  color: #6a1b9a;
+}
+
+.badge-status.cerrado {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1565c0;
+}
+
+.btn-danger {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #b71c1c;
+}
+.ticket-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}

@@ -44,7 +44,9 @@ function TicketForm({
         <option value="alta">Alta</option>
       </select>
 
-      <button type="submit">Crear ticket</button>
+      <button type="submit" className="btn btn-primary">
+        Crear ticket
+      </button>
     </form>
   );
 }
