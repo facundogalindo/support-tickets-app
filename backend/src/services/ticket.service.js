@@ -1,9 +1,11 @@
+
 const {
   findAllTickets,
   findTicketById,
   createTicket,
   updateTicketStatus,
   deleteTicketById,
+  findTicketsByUserId,
 } = require("../repositories/ticket.repository");
 
 const generateId = require("../utils/generateId");
@@ -31,7 +33,7 @@ const updateTicketStatusService = (id, status) => {
   return updated;
 };
 
-const createNewTicket = ({ title, description, priority }) => {
+const createNewTicket = async ({ title, description, priority, userId }) => {
   if (!title || !description || !priority) {
     throw new Error("Todos los campos son obligatorios");
   }
@@ -42,22 +44,22 @@ const createNewTicket = ({ title, description, priority }) => {
     throw new Error("La prioridad debe ser baja, media o alta");
   }
 
-  const tickets = findAllTickets();
-
-  const newTicket = {
-    id: generateId(tickets),
+  return await createTicket({
     title,
     description,
     priority,
-    status: "abierto",
-    createdAt: new Date().toISOString().split("T")[0],
-  };
-
-  return createTicket(newTicket);
-  
+    userId,
+  });
 };
 const deleteTicketService = (id) => {
   return deleteTicketById(id);
+};
+const getMyTickets = async (userId) => {
+  return await findTicketsByUserId(userId);
+};
+
+const getAllTicketsService = async () => {
+  return await findAllTickets();
 };
 
 
@@ -67,4 +69,6 @@ module.exports = {
   createNewTicket,
   updateTicketStatusService,
   deleteTicketService,
+  getMyTickets,
+  getAllTicketsService
 };

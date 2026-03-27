@@ -14,3 +14,6 @@ pool
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
+
+const { registerUser } = require("./services/auth.service");
+
