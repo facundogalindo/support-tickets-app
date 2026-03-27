@@ -13,6 +13,8 @@ function TicketCard({
   handleStatusChange,
   showActions = false,
 }: TicketCardProps) {
+  const canChangeStatus = ticket.status !== "cerrado";
+
   return (
     <div className="ticket-card">
       <h2>{ticket.title}</h2>
@@ -50,7 +52,7 @@ function TicketCard({
             </button>
           )}
 
-          {handleStatusChange && (
+          {handleStatusChange && canChangeStatus && (
             <button
               onClick={() => handleStatusChange(ticket.id, ticket.status)}
               className="btn btn-secondary"

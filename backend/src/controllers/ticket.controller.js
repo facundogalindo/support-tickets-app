@@ -10,7 +10,7 @@ const {
 const getTicket = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const ticket = await getTicketById(id);
+    const ticket = await getTicketById(id, req.user);
 
     if (!ticket) {
       return res.status(404).json({ message: "Ticket no encontrado" });
@@ -18,6 +18,10 @@ const getTicket = async (req, res) => {
 
     res.json(ticket);
   } catch (error) {
+    if (error.message === "No tenés permisos para ver este ticket") {
+      return res.status(403).json({ message: error.message });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };
@@ -27,7 +31,7 @@ const updateTicketStatusController = async (req, res) => {
     const id = Number(req.params.id);
     const { status } = req.body;
 
-    const updated = await updateTicketStatusService(id, status);
+    const updated = await updateTicketStatusService(id, status, req.user);
 
     if (!updated) {
       return res.status(404).json({ message: "Ticket no encontrado" });
@@ -35,7 +39,20 @@ const updateTicketStatusController = async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    if (
+      error.message === "No tenés permisos para actualizar el estado"
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+
+    if (
+      error.message === "Estado inválido" ||
+      error.message.startsWith("No se puede cambiar de")
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -57,7 +74,8 @@ const createTicket = async (req, res) => {
 const deleteTicketController = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const deleted = await deleteTicketService(id);
+
+    const deleted = await deleteTicketService(id, req.user);
 
     if (!deleted) {
       return res.status(404).json({ message: "Ticket no encontrado" });
@@ -65,6 +83,10 @@ const deleteTicketController = async (req, res) => {
 
     res.json(deleted);
   } catch (error) {
+    if (error.message === "No tenés permisos para eliminar tickets") {
+      return res.status(403).json({ message: error.message });
+    }
+
     res.status(500).json({ message: error.message });
   }
 };

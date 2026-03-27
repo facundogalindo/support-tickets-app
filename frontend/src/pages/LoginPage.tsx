@@ -43,7 +43,9 @@ function LoginPage() {
   return (
     <div className="container">
       <h1>Iniciar sesión</h1>
-
+<h1 className="text-3xl font-bold text-red-500">
+  Test Tailwind
+</h1>
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="email">Email</label>
@@ -70,6 +72,9 @@ function LoginPage() {
         {error && <p>{error}</p>}
 
         <button type="submit">Ingresar</button>
+        <p>
+        ¿No tenés cuenta? <a href="/register">Registrate</a>
+       </p>
       </form>
     </div>
   );
