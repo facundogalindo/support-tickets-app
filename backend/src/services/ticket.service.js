@@ -1,4 +1,3 @@
-
 const {
   findAllTickets,
   findTicketById,
@@ -8,23 +7,22 @@ const {
   findTicketsByUserId,
 } = require("../repositories/ticket.repository");
 
-const generateId = require("../utils/generateId");
-
-const getAllTickets = () => {
-  return findAllTickets();
+const getAllTicketsService = async () => {
+  return await findAllTickets();
 };
 
-const getTicketById = (id) => {
-  return findTicketById(id);
+const getTicketById = async (id) => {
+  return await findTicketById(id);
 };
-const updateTicketStatusService = (id, status) => {
+
+const updateTicketStatusService = async (id, status) => {
   const validStatuses = ["abierto", "en progreso", "cerrado"];
 
   if (!validStatuses.includes(status)) {
     throw new Error("Estado inválido");
   }
 
-  const updated = updateTicketStatus(id, status);
+  const updated = await updateTicketStatus(id, status);
 
   if (!updated) {
     return null;
@@ -51,24 +49,20 @@ const createNewTicket = async ({ title, description, priority, userId }) => {
     userId,
   });
 };
-const deleteTicketService = (id) => {
-  return deleteTicketById(id);
+
+const deleteTicketService = async (id) => {
+  return await deleteTicketById(id);
 };
+
 const getMyTickets = async (userId) => {
   return await findTicketsByUserId(userId);
 };
 
-const getAllTicketsService = async () => {
-  return await findAllTickets();
-};
-
-
 module.exports = {
-  getAllTickets,
+  getAllTicketsService,
   getTicketById,
   createNewTicket,
   updateTicketStatusService,
   deleteTicketService,
   getMyTickets,
-  getAllTicketsService
 };

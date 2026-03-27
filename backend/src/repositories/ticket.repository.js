@@ -1,12 +1,15 @@
-  const tickets = require("../data/tickets.json");
-  const pool = require("../config/db");
+const pool = require("../config/db");
 
+const findTicketById = async (id) => {
+  const query = `
+    SELECT id, title, description, priority, status, created_at, user_id
+    FROM tickets
+    WHERE id = $1;
+  `;
 
-  const findTicketById = (id) => {
-    return tickets.find((ticket) => ticket.id === id);
-  };
-
-
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
 
 const createTicket = async ({ title, description, priority, userId }) => {
   const query = `
@@ -16,64 +19,64 @@ const createTicket = async ({ title, description, priority, userId }) => {
   `;
 
   const values = [title, description, priority, userId];
-
   const result = await pool.query(query, values);
 
   return result.rows[0];
 };
-  const updateTicketStatus = (id, status) => {
-    const ticket = tickets.find((t) => t.id === id);
 
-    if (!ticket) {
-      return null;
-    }
+const updateTicketStatus = async (id, status) => {
+  const query = `
+    UPDATE tickets
+    SET status = $1
+    WHERE id = $2
+    RETURNING id, title, description, priority, status, created_at, user_id;
+  `;
 
-    ticket.status = status;
-    return ticket;
-  };
+  const values = [status, id];
+  const result = await pool.query(query, values);
 
-  const deleteTicketById = (id) => {
-    const index = tickets.findIndex((ticket) => ticket.id === id);
+  return result.rows[0];
+};
 
-    if (index === -1) {
-      return null;
-    }
+const deleteTicketById = async (id) => {
+  const query = `
+    DELETE FROM tickets
+    WHERE id = $1
+    RETURNING id, title, description, priority, status, created_at, user_id;
+  `;
 
-    const deletedTicket = tickets[index];
-    tickets.splice(index, 1);
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
 
-    return deletedTicket;
-  };
-  const findTicketsByUserId = async (userId) => {
-    const query = `
-      SELECT id, title, description, priority, status, created_at, user_id
-      FROM tickets
-      WHERE user_id = $1
-      ORDER BY created_at DESC;
-    `;
+const findTicketsByUserId = async (userId) => {
+  const query = `
+    SELECT id, title, description, priority, status, created_at, user_id
+    FROM tickets
+    WHERE user_id = $1
+    ORDER BY created_at DESC;
+  `;
 
-    const result = await pool.query(query, [userId]);
-    return result.rows;
-  };
+  const result = await pool.query(query, [userId]);
+  return result.rows;
+};
 
-  const findAllTickets = async () => {
-    const query = `
-      SELECT id, title, description, priority, status, created_at, user_id
-      FROM tickets
-      ORDER BY created_at DESC;
-    `;
+const findAllTickets = async () => {
+  const query = `
+    SELECT id, title, description, priority, status, created_at, user_id
+    FROM tickets
+    ORDER BY created_at DESC;
+  `;
 
-    const result = await pool.query(query);
-    return result.rows;
-  };
+  const result = await pool.query(query);
+  return result.rows;
+};
 
-  module.exports = {
-    findAllTickets,
-    findTicketById,
-    createTicket,
-    updateTicketStatus,
-    deleteTicketById,
-    findTicketsByUserId,
-    findAllTickets
-
-  };
+module.exports = {
+  findAllTickets,
+  findTicketById,
+  createTicket,
+  updateTicketStatus,
+  deleteTicketById,
+  findTicketsByUserId,
+};
