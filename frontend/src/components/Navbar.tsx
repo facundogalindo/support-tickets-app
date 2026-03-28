@@ -14,14 +14,28 @@ function Navbar() {
     return null;
   }
 
-  return (
-    <div className="navbar">
-      <div>
-        <strong>{user.name}</strong> - {user.role}
-      </div>
+  const roleLabel = user.role === "agent" ? "Agente" : "Usuario";
 
-      <button onClick={handleLogout}>Cerrar sesión</button>
-    </div>
+  return (
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div>
+          <h1 className="text-lg font-bold text-slate-800">
+            Support Tickets System
+          </h1>
+          <p className="text-sm text-slate-500">
+            {user.name} · {roleLabel}
+          </p>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          Cerrar sesión
+        </button>
+      </div>
+    </header>
   );
 }
 

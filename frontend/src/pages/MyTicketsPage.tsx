@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Ticket } from "../types/ticket";
 import Navbar from "../components/Navbar";
-
 import {
   createTicketRequest,
   getMyTicketsRequest,
@@ -17,13 +16,17 @@ function MyTicketsPage() {
   const [formError, setFormError] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const getTickets = async () => {
     try {
+      setLoading(true);
       const data = await getMyTicketsRequest();
       setTickets(data);
     } catch (error) {
       console.error("Error al obtener mis tickets:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,66 +73,128 @@ function MyTicketsPage() {
   });
 
   return (
-<>
-  <Navbar />
+    <>
+      <Navbar />
 
-    <div className="container">
-      <h1>Mis tickets</h1>
-      <p>Creá y consultá tus tickets</p>
+      <main className="min-h-screen bg-slate-100">
+        <div className="mx-auto max-w-6xl px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-slate-800">Mis tickets</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              Creá y consultá tus tickets de soporte
+            </p>
+          </div>
 
-      <div>
-        <label htmlFor="statusFilter">Filtrar por estado: </label>
-        <select
-          id="statusFilter"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="todos">Todos</option>
-          <option value="abierto">Abierto</option>
-          <option value="en progreso">En progreso</option>
-          <option value="cerrado">Cerrado</option>
-        </select>
-      </div>
+          <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
+            {/* FORM */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Nuevo ticket
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Completá el formulario para registrar una incidencia
+                </p>
+              </div>
 
-      <div>
-        <input
-          type="text"
-          placeholder="Buscar por título..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+              <TicketForm
+                title={title}
+                description={description}
+                priority={priority}
+                setTitle={setTitle}
+                setDescription={setDescription}
+                setPriority={setPriority}
+                handleSubmit={handleSubmit}
+                formError={formError}
+              />
+            </section>
 
-      <TicketForm
-        title={title}
-        description={description}
-        priority={priority}
-        setTitle={setTitle}
-        setDescription={setDescription}
-        setPriority={setPriority}
-        handleSubmit={handleSubmit}
-        formError={formError}
-      />
+            {/* LISTADO */}
+            <section className="space-y-6">
+              {/* FILTROS */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold text-slate-800">
+                    Listado de tickets
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Filtrá y buscá tus tickets cargados
+                  </p>
+                </div>
 
-      {filteredTickets.length === 0 ? (
-        tickets.length === 0 ? (
-          <p>No tenés tickets cargados.</p>
-        ) : (
-          <p>No hay tickets que coincidan con la búsqueda o el filtro seleccionado.</p>
-        )
-      ) : (
-        <div className="tickets-grid">
-          {filteredTickets.map((ticket) => (
-            <TicketCard
-            key={ticket.id}
-            ticket={ticket}
-            />
-          ))}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Filtrar por estado
+                    </label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="abierto">Abierto</option>
+                      <option value="en progreso">En progreso</option>
+                      <option value="cerrado">Cerrado</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Buscar
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Buscar..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 px-4 py-3"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RESULTADOS */}
+              {loading ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <p className="text-sm text-slate-500">
+                    Cargando tickets...
+                  </p>
+                </div>
+              ) : filteredTickets.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  {tickets.length === 0 ? (
+                    <>
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        No tenés tickets cargados
+                      </h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        Creá tu primer ticket desde el formulario.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        No hay resultados
+                      </h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        No hay coincidencias con el filtro o búsqueda.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredTickets.map((ticket) => (
+                    <TicketCard key={ticket.id} ticket={ticket} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
         </div>
-      )}
-    </div>
-</>
-    
+      </main>
+    </>
   );
 }
 
