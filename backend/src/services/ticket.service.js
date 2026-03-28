@@ -5,6 +5,7 @@ const {
   updateTicketStatus,
   deleteTicketById,
   findTicketsByUserId,
+  assignTicket,
 } = require("../repositories/ticket.repository");
 
 const getAllTicketsService = async () => {
@@ -100,6 +101,20 @@ const getMyTickets = async (userId) => {
   return await findTicketsByUserId(userId);
 };
 
+const assignTicketService = async (ticketId, currentUser) => {
+  if (currentUser.role !== "agent") {
+    throw new Error("Solo los agentes pueden asignarse tickets");
+  }
+
+  const updated = await assignTicket(ticketId, currentUser.id);
+
+  if (!updated) {
+    throw new Error("El ticket ya fue asignado");
+  }
+
+  return updated;
+};
+
 module.exports = {
   getAllTicketsService,
   getTicketById,
@@ -107,4 +122,5 @@ module.exports = {
   updateTicketStatusService,
   deleteTicketService,
   getMyTickets,
+  assignTicketService,
 };

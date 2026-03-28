@@ -6,6 +6,7 @@ import {
   deleteTicketRequest,
   getAllTicketsRequest,
   updateTicketStatusRequest,
+  assignTicketRequest
 } from "../services/ticketService";
 import TicketCard from "../components/TicketCard";
 
@@ -14,6 +15,9 @@ function AdminTicketsPage() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
 
   const getTickets = async () => {
     try {
@@ -37,10 +41,13 @@ function AdminTicketsPage() {
     }
 
     try {
+      setDeletingId(id);
       await deleteTicketRequest(id);
       await getTickets();
     } catch (error) {
       console.error("Error al eliminar ticket:", error);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -60,10 +67,13 @@ function AdminTicketsPage() {
     const nextStatus = getNextStatus(currentStatus);
 
     try {
+      setUpdatingId(id);
       await updateTicketStatusRequest(id, nextStatus);
       await getTickets();
     } catch (error) {
       console.error("Error al actualizar estado:", error);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -81,6 +91,17 @@ function AdminTicketsPage() {
 
     return matchesStatus && matchesSearch;
   });
+  const handleAssign = async (id: number) => {
+  try {
+    setAssigningId(id);
+    await assignTicketRequest(id);
+    await getTickets();
+  } catch (error) {
+    console.error("Error al asignar ticket:", error);
+  } finally {
+    setAssigningId(null);
+  }
+};
 
   return (
     <>
@@ -184,6 +205,11 @@ function AdminTicketsPage() {
                     handleDelete={handleDelete}
                     handleStatusChange={handleStatusChange}
                     showActions={true}
+                    isDeleting={deletingId === ticket.id}
+                    isUpdating={updatingId === ticket.id}
+                    onAssign={handleAssign}
+                    isAssigning={assigningId === ticket.id}
+                    assignedTo={ticket.assigned_to}
                   />
                 ))}
               </div>

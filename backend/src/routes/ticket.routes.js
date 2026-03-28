@@ -9,6 +9,7 @@ const {
   deleteTicketController,
   getMyTicketsController,
   getAllTicketsController,
+  assignTicketController,
 } = require("../controllers/ticket.controller");
 
 const router = express.Router();
@@ -20,5 +21,7 @@ router.get("/:id", authMiddleware, getTicket);
 router.post("/", authMiddleware, roleMiddleware("user"), createTicket);
 router.patch("/:id/status", authMiddleware, roleMiddleware("agent"), updateTicketStatusController);
 router.delete("/:id", authMiddleware, roleMiddleware("agent"), deleteTicketController);
+
+router.patch("/:id/assign",authMiddleware,roleMiddleware("agent"),assignTicketController);
 
 module.exports = router;

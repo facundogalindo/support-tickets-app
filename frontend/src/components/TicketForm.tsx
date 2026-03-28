@@ -7,6 +7,7 @@ type TicketFormProps = {
   setPriority: React.Dispatch<React.SetStateAction<string>>;
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
   formError: string;
+  submitting?: boolean;
 };
 
 function TicketForm({
@@ -18,6 +19,7 @@ function TicketForm({
   setPriority,
   handleSubmit,
   formError,
+  submitting = false,
 }: TicketFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -40,7 +42,8 @@ function TicketForm({
           placeholder="Ej: No funciona la impresora"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          disabled={submitting}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -57,7 +60,8 @@ function TicketForm({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={5}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 resize-none"
+          disabled={submitting}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 resize-none disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -72,7 +76,8 @@ function TicketForm({
           id="priority"
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+          disabled={submitting}
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <option value="baja">Baja</option>
           <option value="media">Media</option>
@@ -82,9 +87,10 @@ function TicketForm({
 
       <button
         type="submit"
-        className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+        disabled={submitting}
+        className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Crear ticket
+        {submitting ? "Creando..." : "Crear ticket"}
       </button>
     </form>
   );

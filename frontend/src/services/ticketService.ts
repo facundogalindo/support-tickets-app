@@ -58,3 +58,13 @@ export const deleteTicketRequest = async (id: number): Promise<Ticket> => {
   const response = await axios.delete(`${API_URL}/${id}`, getAuthHeaders());
   return mapTicket(response.data);
 };
+
+export const assignTicketRequest = async (id: number) => {
+  const response = await axios.patch(
+    `${API_URL}/${id}/assign`,
+    {},
+    getAuthHeaders()
+  );
+
+  return mapTicket(response.data);
+};

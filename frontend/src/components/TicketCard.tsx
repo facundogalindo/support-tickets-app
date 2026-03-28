@@ -5,6 +5,11 @@ type TicketCardProps = {
   handleDelete?: (id: number) => Promise<void>;
   handleStatusChange?: (id: number, currentStatus: string) => Promise<void>;
   showActions?: boolean;
+  isDeleting?: boolean;
+  isUpdating?: boolean;
+  onAssign?: (id: number) => Promise<void>;
+  isAssigning?: boolean;
+  assignedTo?: number | null;
 };
 
 function TicketCard({
@@ -12,6 +17,11 @@ function TicketCard({
   handleDelete,
   handleStatusChange,
   showActions = false,
+  isDeleting = false,
+  isUpdating = false,
+  onAssign,
+  isAssigning = false,
+  assignedTo = null,
 }: TicketCardProps) {
   const canChangeStatus = ticket.status !== "cerrado";
 
@@ -66,21 +76,37 @@ function TicketCard({
           {handleDelete && (
             <button
               onClick={() => handleDelete(ticket.id)}
-              className="flex-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100"
+              disabled={isDeleting || isUpdating}
+              className="flex-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Eliminar
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </button>
           )}
 
           {handleStatusChange && canChangeStatus && (
             <button
               onClick={() => handleStatusChange(ticket.id, ticket.status)}
-              className="flex-1 rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-200"
+              disabled={isDeleting || isUpdating}
+              className="flex-1 rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Cambiar estado
+              {isUpdating ? "Actualizando..." : "Cambiar estado"}
+            </button>
+            
+          )}
+
+                    {onAssign && assignedTo === null && (
+            <button
+              onClick={() => onAssign(ticket.id)}
+              disabled={isAssigning}
+              className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isAssigning ? "Asignando..." : "Tomar ticket"}
             </button>
           )}
+          
+          
         </div>
+        
       )}
     </div>
   );

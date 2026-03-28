@@ -5,6 +5,7 @@ const {
   deleteTicketService,
   getMyTickets,
   getAllTicketsService,
+  assignTicketService,
 } = require("../services/ticket.service");
 
 const getTicket = async (req, res) => {
@@ -109,6 +110,25 @@ const getAllTicketsController = async (req, res) => {
   }
 };
 
+const assignTicketController = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    const updated = await assignTicketService(id, req.user);
+
+    res.json(updated);
+  } catch (error) {
+    if (
+      error.message === "Solo los agentes pueden asignarse tickets" ||
+      error.message === "El ticket ya fue asignado"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getTicket,
   createTicket,
@@ -116,4 +136,5 @@ module.exports = {
   deleteTicketController,
   getMyTicketsController,
   getAllTicketsController,
+  assignTicketController,
 };

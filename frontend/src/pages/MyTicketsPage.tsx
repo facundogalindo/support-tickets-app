@@ -17,7 +17,8 @@ function MyTicketsPage() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [submitting, setSubmitting] = useState(false);
+  
   const getTickets = async () => {
     try {
       setLoading(true);
@@ -30,32 +31,36 @@ function MyTicketsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    if (!title.trim() || !description.trim() || !priority) {
-      setFormError("Todos los campos son obligatorios");
-      return;
-    }
+  if (!title.trim() || !description.trim() || !priority) {
+    setFormError("Todos los campos son obligatorios");
+    return;
+  }
 
-    setFormError("");
+  setFormError("");
 
-    try {
-      await createTicketRequest({
-        title,
-        description,
-        priority,
-      });
+  try {
+    setSubmitting(true);
 
-      await getTickets();
+    await createTicketRequest({
+      title,
+      description,
+      priority,
+    });
 
-      setTitle("");
-      setDescription("");
-      setPriority("media");
-    } catch (error) {
-      console.error("Error al crear ticket:", error);
-    }
-  };
+    await getTickets();
+
+    setTitle("");
+    setDescription("");
+    setPriority("media");
+  } catch (error) {
+    console.error("Error al crear ticket:", error);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   useEffect(() => {
     getTickets();

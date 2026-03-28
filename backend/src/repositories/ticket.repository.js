@@ -71,7 +71,17 @@ const findAllTickets = async () => {
   const result = await pool.query(query);
   return result.rows;
 };
+const assignTicket = async (ticketId, agentId) => {
+  const query = `
+    UPDATE tickets
+    SET assigned_to = $1
+    WHERE id = $2 AND assigned_to IS NULL
+    RETURNING *;
+  `;
 
+  const result = await pool.query(query, [agentId, ticketId]);
+  return result.rows[0];
+};
 module.exports = {
   findAllTickets,
   findTicketById,
@@ -79,4 +89,5 @@ module.exports = {
   updateTicketStatus,
   deleteTicketById,
   findTicketsByUserId,
+  assignTicket,
 };
