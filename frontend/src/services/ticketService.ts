@@ -2,7 +2,8 @@ import axios from "axios";
 import type { Ticket } from "../types/ticket";
 import type { TicketMessage } from "../types/ticketMessage";
 
-const API_URL = "http://localhost:3001/tickets";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_URL = `${API_BASE_URL}/tickets`;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
