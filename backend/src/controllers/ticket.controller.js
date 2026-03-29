@@ -6,6 +6,9 @@ const {
   getMyTickets,
   getAllTicketsService,
   assignTicketService,
+  addTicketMessageService,
+  getTicketMessagesService,
+  closeTicketService
 } = require("../services/ticket.service");
 
 const getTicket = async (req, res) => {
@@ -41,15 +44,13 @@ const updateTicketStatusController = async (req, res) => {
     res.json(updated);
   } catch (error) {
     if (
-      error.message === "No tenés permisos para actualizar el estado"
+      error.message === "No tenés permisos" ||
+      error.message === "No podés modificar un ticket asignado a otro agente"
     ) {
       return res.status(403).json({ message: error.message });
     }
 
-    if (
-      error.message === "Estado inválido" ||
-      error.message.startsWith("No se puede cambiar de")
-    ) {
+    if (error.message === "Transición inválida") {
       return res.status(400).json({ message: error.message });
     }
 
@@ -75,7 +76,6 @@ const createTicket = async (req, res) => {
 const deleteTicketController = async (req, res) => {
   try {
     const id = Number(req.params.id);
-
     const deleted = await deleteTicketService(id, req.user);
 
     if (!deleted) {
@@ -84,7 +84,10 @@ const deleteTicketController = async (req, res) => {
 
     res.json(deleted);
   } catch (error) {
-    if (error.message === "No tenés permisos para eliminar tickets") {
+    if (
+      error.message === "No tenés permisos" ||
+      error.message === "No podés eliminar un ticket asignado a otro agente"
+    ) {
       return res.status(403).json({ message: error.message });
     }
 
@@ -113,7 +116,6 @@ const getAllTicketsController = async (req, res) => {
 const assignTicketController = async (req, res) => {
   try {
     const id = Number(req.params.id);
-
     const updated = await assignTicketService(id, req.user);
 
     res.json(updated);
@@ -129,6 +131,91 @@ const assignTicketController = async (req, res) => {
   }
 };
 
+const addTicketMessageController = async (req, res) => {
+  try {
+    const ticketId = Number(req.params.id);
+    const { message } = req.body;
+
+    const newMessage = await addTicketMessageService(
+      ticketId,
+      message,
+      req.user
+    );
+
+    if (!newMessage) {
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    if (
+      error.message === "El mensaje es obligatorio" ||
+      error.message === "Solo el agente asignado puede responder este ticket"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (
+      error.message === "No tenés permisos para escribir en este ticket"
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getTicketMessagesController = async (req, res) => {
+  try {
+    const ticketId = Number(req.params.id);
+    const messages = await getTicketMessagesService(ticketId, req.user);
+
+    if (!messages) {
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+
+    res.json(messages);
+  } catch (error) {
+    if (
+      error.message ===
+      "No tenés permisos para ver los mensajes de este ticket"
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+};
+const closeTicketController = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    const closed = await closeTicketService(id, req.user);
+
+    if (!closed) {
+      return res.status(404).json({ message: "Ticket no encontrado" });
+    }
+
+    res.json(closed);
+  } catch (error) {
+    if (
+      error.message === "El ticket ya está cerrado" ||
+      error.message === "No podés cerrar el ticket en este estado" ||
+      error.message === "No podés cerrar un ticket sin analizar"
+    ) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (
+      error.message === "No tenés permisos para cerrar este ticket" ||
+      error.message === "Solo el agente asignado puede cerrar este ticket"
+    ) {
+      return res.status(403).json({ message: error.message });
+    }
+
+    res.status(500).json({ message: error.message });
+  }
+};
 module.exports = {
   getTicket,
   createTicket,
@@ -137,4 +224,7 @@ module.exports = {
   getMyTicketsController,
   getAllTicketsController,
   assignTicketController,
+  addTicketMessageController,
+  getTicketMessagesController,
+  closeTicketController
 };

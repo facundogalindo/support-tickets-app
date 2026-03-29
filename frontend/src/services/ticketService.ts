@@ -1,5 +1,6 @@
 import axios from "axios";
 import type { Ticket } from "../types/ticket";
+import type { TicketMessage } from "../types/ticketMessage";
 
 const API_URL = "http://localhost:3001/tickets";
 
@@ -20,6 +21,7 @@ const mapTicket = (data: any): Ticket => ({
   priority: data.priority,
   status: data.status,
   createdAt: data.created_at,
+  assigned_to: data.assigned_to,
 });
 
 export const getMyTicketsRequest = async (): Promise<Ticket[]> => {
@@ -66,5 +68,38 @@ export const assignTicketRequest = async (id: number) => {
     getAuthHeaders()
   );
 
+  return mapTicket(response.data);
+};
+
+export const getTicketMessagesRequest = async (
+  id: number
+): Promise<TicketMessage[]> => {
+  const response = await axios.get(`${API_URL}/${id}/messages`, getAuthHeaders());
+  return response.data;
+};
+
+export const addTicketMessageRequest = async (
+  id: number,
+  message: string
+): Promise<TicketMessage> => {
+  const response = await axios.post(
+    `${API_URL}/${id}/messages`,
+    { message },
+    getAuthHeaders()
+  );
+
+  return response.data;
+};
+export const closeTicketRequest = async (id: number): Promise<Ticket> => {
+  const response = await axios.patch(
+    `${API_URL}/${id}/close`,
+    {},
+    getAuthHeaders()
+  );
+
+  return mapTicket(response.data);
+};
+export const getTicketRequest = async (id: number): Promise<Ticket> => {
+  const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
   return mapTicket(response.data);
 };

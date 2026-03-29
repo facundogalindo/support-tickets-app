@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Ticket } from "../types/ticket";
 import Navbar from "../components/Navbar";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   createTicketRequest,
   getMyTicketsRequest,
@@ -18,7 +19,7 @@ function MyTicketsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const getTickets = async () => {
     try {
       setLoading(true);
@@ -31,36 +32,36 @@ function MyTicketsPage() {
     }
   };
 
-const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  if (!title.trim() || !description.trim() || !priority) {
-    setFormError("Todos los campos son obligatorios");
-    return;
-  }
+    if (!title.trim() || !description.trim() || !priority) {
+      setFormError("Todos los campos son obligatorios");
+      return;
+    }
 
-  setFormError("");
+    setFormError("");
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    await createTicketRequest({
-      title,
-      description,
-      priority,
-    });
+      await createTicketRequest({
+        title,
+        description,
+        priority,
+      });
 
-    await getTickets();
+      await getTickets();
 
-    setTitle("");
-    setDescription("");
-    setPriority("media");
-  } catch (error) {
-    console.error("Error al crear ticket:", error);
-  } finally {
-    setSubmitting(false);
-  }
-};
+      setTitle("");
+      setDescription("");
+      setPriority("media");
+    } catch (error) {
+      console.error("Error al crear ticket:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     getTickets();
@@ -91,7 +92,6 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-            {/* FORM */}
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-slate-800">
@@ -111,12 +111,11 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 setPriority={setPriority}
                 handleSubmit={handleSubmit}
                 formError={formError}
+                submitting={submitting}
               />
             </section>
 
-            {/* LISTADO */}
             <section className="space-y-6">
-              {/* FILTROS */}
               <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="mb-4">
                   <h2 className="text-xl font-semibold text-slate-800">
@@ -129,7 +128,9 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                    <label
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
                       Filtrar por estado
                     </label>
                     <select
@@ -138,14 +139,18 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                       className="w-full rounded-xl border border-slate-300 px-4 py-3"
                     >
                       <option value="todos">Todos</option>
-                      <option value="abierto">Abierto</option>
-                      <option value="en progreso">En progreso</option>
+                      <option value="en asignacion">En asignación</option>
+                      <option value="en analisis">En análisis</option>
+                      <option value="en control del cliente">En control del cliente</option>
+                      <option value="en control del agente">En control del agente</option>
                       <option value="cerrado">Cerrado</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                    <label
+                      className="mb-2 block text-sm font-medium text-slate-700"
+                    >
                       Buscar
                     </label>
                     <input
@@ -159,12 +164,9 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 </div>
               </div>
 
-              {/* RESULTADOS */}
               {loading ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-                  <p className="text-sm text-slate-500">
-                    Cargando tickets...
-                  </p>
+                  <LoadingSpinner />
                 </div>
               ) : filteredTickets.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -190,9 +192,13 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredTickets.map((ticket) => (
-                    <TicketCard key={ticket.id} ticket={ticket} />
-                  ))}
+                {filteredTickets.map((ticket) => (
+                  <TicketCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    assignedTo={ticket.assigned_to}
+                  />
+                ))}
                 </div>
               )}
             </section>

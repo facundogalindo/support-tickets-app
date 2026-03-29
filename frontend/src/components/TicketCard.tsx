@@ -1,29 +1,45 @@
+import { Link } from "react-router-dom";
 import type { Ticket } from "../types/ticket";
 
 type TicketCardProps = {
   ticket: Ticket;
+  currentUserId?: number;
   handleDelete?: (id: number) => Promise<void>;
   handleStatusChange?: (id: number, currentStatus: string) => Promise<void>;
+  onAssign?: (id: number) => Promise<void>;
   showActions?: boolean;
   isDeleting?: boolean;
   isUpdating?: boolean;
-  onAssign?: (id: number) => Promise<void>;
   isAssigning?: boolean;
   assignedTo?: number | null;
 };
 
 function TicketCard({
   ticket,
+  currentUserId,
   handleDelete,
   handleStatusChange,
+  onAssign,
   showActions = false,
   isDeleting = false,
   isUpdating = false,
-  onAssign,
   isAssigning = false,
-  assignedTo = null,
+  assignedTo,
 }: TicketCardProps) {
   const canChangeStatus = ticket.status !== "cerrado";
+
+  const isUnassigned = assignedTo == null;
+  const hasAgentContext = currentUserId !== undefined;
+
+  const isAssignedToMe =
+    hasAgentContext && Number(assignedTo) === Number(currentUserId);
+
+  const isAssignedToOther =
+    hasAgentContext &&
+    assignedTo != null &&
+    Number(assignedTo) !== Number(currentUserId);
+
+  const canManageTicket = isUnassigned || isAssignedToMe;
 
   const priorityStyles = {
     baja: "bg-green-100 text-green-700",
@@ -31,12 +47,29 @@ function TicketCard({
     alta: "bg-red-100 text-red-700",
   };
 
-  const statusStyles = {
-    abierto: "bg-blue-100 text-blue-700",
-    "en progreso": "bg-purple-100 text-purple-700",
-    cerrado: "bg-slate-200 text-slate-700",
-  };
+const statusStyles = {
+  "en asignacion": "bg-blue-100 text-blue-700",
+  "en analisis": "bg-purple-100 text-purple-700",
+  "en control del cliente": "bg-orange-100 text-orange-700",
+  "en control del agente": "bg-indigo-100 text-indigo-700",
+  cerrado: "bg-slate-200 text-slate-700",
+};
 
+const assignmentLabel = isUnassigned
+  ? "Sin asignar"
+  : hasAgentContext
+  ? isAssignedToMe
+    ? "Asignado a mí"
+    : "Asignado a otro"
+  : "Asignado";
+
+const assignmentStyles = isUnassigned
+  ? "bg-slate-100 text-slate-700"
+  : hasAgentContext
+  ? isAssignedToMe
+    ? "bg-emerald-100 text-emerald-700"
+    : "bg-orange-100 text-orange-700"
+  : "bg-emerald-100 text-emerald-700";
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -65,48 +98,65 @@ function TicketCard({
         >
           {ticket.status}
         </span>
+
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-medium ${assignmentStyles}`}
+        >
+          {assignmentLabel}
+        </span>
       </div>
 
       <p className="mb-4 text-xs text-slate-400">
         {new Date(ticket.createdAt).toLocaleDateString()}
       </p>
 
+      <div className="mb-3">
+        <Link
+          to={`/tickets/${ticket.id}`}
+          className="inline-flex rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
+        >
+          Ver conversación
+        </Link>
+      </div>
+
       {showActions && (
-        <div className="flex gap-2">
-          {handleDelete && (
+        <div className="flex flex-wrap gap-2">
+          {onAssign && isUnassigned && (
+            <button
+              onClick={() => onAssign(ticket.id)}
+              disabled={isAssigning || isDeleting || isUpdating}
+              className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isAssigning ? "Asignando..." : "Tomar ticket"}
+            </button>
+          )}
+
+          {handleDelete && canManageTicket && (
             <button
               onClick={() => handleDelete(ticket.id)}
-              disabled={isDeleting || isUpdating}
+              disabled={isDeleting || isUpdating || isAssigning}
               className="flex-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isDeleting ? "Eliminando..." : "Eliminar"}
             </button>
           )}
 
-          {handleStatusChange && canChangeStatus && (
+          {handleStatusChange && canManageTicket && canChangeStatus && (
             <button
               onClick={() => handleStatusChange(ticket.id, ticket.status)}
-              disabled={isDeleting || isUpdating}
+              disabled={isDeleting || isUpdating || isAssigning}
               className="flex-1 rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isUpdating ? "Actualizando..." : "Cambiar estado"}
             </button>
-            
           )}
-
-                    {onAssign && assignedTo === null && (
-            <button
-              onClick={() => onAssign(ticket.id)}
-              disabled={isAssigning}
-              className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isAssigning ? "Asignando..." : "Tomar ticket"}
-            </button>
-          )}
-          
-          
         </div>
-        
+      )}
+
+      {showActions && isAssignedToOther && (
+        <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+          Este ticket está asignado a otro agente.
+        </div>
       )}
     </div>
   );

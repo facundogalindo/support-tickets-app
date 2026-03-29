@@ -2,7 +2,7 @@ const pool = require("../config/db");
 
 const findTicketById = async (id) => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
     FROM tickets
     WHERE id = $1;
   `;
@@ -10,12 +10,11 @@ const findTicketById = async (id) => {
   const result = await pool.query(query, [id]);
   return result.rows[0];
 };
-
 const createTicket = async ({ title, description, priority, userId }) => {
   const query = `
     INSERT INTO tickets (title, description, priority, status, user_id)
-    VALUES ($1, $2, $3, 'abierto', $4)
-    RETURNING id, title, description, priority, status, created_at, user_id;
+    VALUES ($1, $2, $3, 'en asignacion', $4)
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
   `;
 
   const values = [title, description, priority, userId];
@@ -29,7 +28,7 @@ const updateTicketStatus = async (id, status) => {
     UPDATE tickets
     SET status = $1
     WHERE id = $2
-    RETURNING id, title, description, priority, status, created_at, user_id;
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
   `;
 
   const values = [status, id];
@@ -42,7 +41,7 @@ const deleteTicketById = async (id) => {
   const query = `
     DELETE FROM tickets
     WHERE id = $1
-    RETURNING id, title, description, priority, status, created_at, user_id;
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
   `;
 
   const result = await pool.query(query, [id]);
@@ -51,7 +50,7 @@ const deleteTicketById = async (id) => {
 
 const findTicketsByUserId = async (userId) => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
     FROM tickets
     WHERE user_id = $1
     ORDER BY created_at DESC;
@@ -63,7 +62,7 @@ const findTicketsByUserId = async (userId) => {
 
 const findAllTickets = async () => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
     FROM tickets
     ORDER BY created_at DESC;
   `;
@@ -74,12 +73,26 @@ const findAllTickets = async () => {
 const assignTicket = async (ticketId, agentId) => {
   const query = `
     UPDATE tickets
-    SET assigned_to = $1
+    SET assigned_to = $1,
+        status = 'en analisis'
     WHERE id = $2 AND assigned_to IS NULL
-    RETURNING *;
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
   `;
 
   const result = await pool.query(query, [agentId, ticketId]);
+  return result.rows[0];
+};
+const closeTicket = async (ticketId, userId) => {
+  const query = `
+    UPDATE tickets
+    SET status = 'cerrado',
+        closed_by = $1,
+        closed_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, closed_by, closed_at;
+  `;
+
+  const result = await pool.query(query, [userId, ticketId]);
   return result.rows[0];
 };
 module.exports = {
@@ -90,4 +103,5 @@ module.exports = {
   deleteTicketById,
   findTicketsByUserId,
   assignTicket,
+  closeTicket,
 };

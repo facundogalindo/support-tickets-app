@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import MyTicketsPage from "./pages/MyTicketsPage";
 import AdminTicketsPage from "./pages/AdminTicketsPage";
+import TicketDetailPage from "./pages/TicketDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -26,6 +27,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["agent"]}>
             <AdminTicketsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/tickets/:id"
+        element={
+          <ProtectedRoute allowedRoles={["user", "agent"]}>
+            <TicketDetailPage />
           </ProtectedRoute>
         }
       />

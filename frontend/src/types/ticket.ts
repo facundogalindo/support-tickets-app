@@ -5,4 +5,6 @@ export type Ticket = {
   priority: string;
   status: string;
   createdAt: string;
+  assigned_to?: number | null;
+
 };

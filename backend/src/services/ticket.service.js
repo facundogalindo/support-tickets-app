@@ -6,7 +6,13 @@ const {
   deleteTicketById,
   findTicketsByUserId,
   assignTicket,
+  closeTicket
 } = require("../repositories/ticket.repository");
+
+const {
+  createTicketMessage,
+  findMessagesByTicketId,
+} = require("../repositories/ticket-message.repository");
 
 const getAllTicketsService = async () => {
   return await findAllTickets();
@@ -31,13 +37,7 @@ const getTicketById = async (id, currentUser) => {
 
 const updateTicketStatusService = async (id, status, currentUser) => {
   if (currentUser.role !== "agent") {
-    throw new Error("No tenés permisos para actualizar el estado");
-  }
-
-  const validStatuses = ["abierto", "en progreso", "cerrado"];
-
-  if (!validStatuses.includes(status)) {
-    throw new Error("Estado inválido");
+    throw new Error("No tenés permisos");
   }
 
   const ticket = await findTicketById(id);
@@ -46,22 +46,26 @@ const updateTicketStatusService = async (id, status, currentUser) => {
     return null;
   }
 
-  const currentStatus = ticket.status;
+  if (
+    ticket.assigned_to !== null &&
+    Number(ticket.assigned_to) !== Number(currentUser.id)
+  ) {
+    throw new Error("No podés modificar un ticket asignado a otro agente");
+  }
 
   const validTransitions = {
-    abierto: ["en progreso"],
-    "en progreso": ["cerrado"],
+    "en asignacion": ["en analisis"],
+    "en analisis": ["cerrado"],
+    "en control del cliente": ["cerrado"],
+    "en control del agente": ["cerrado"],
     cerrado: [],
   };
 
-  if (!validTransitions[currentStatus].includes(status)) {
-    throw new Error(
-      `No se puede cambiar de "${currentStatus}" a "${status}"`
-    );
+  if (!validTransitions[ticket.status]?.includes(status)) {
+    throw new Error("Transición inválida");
   }
 
-  const updated = await updateTicketStatus(id, status);
-  return updated;
+  return await updateTicketStatus(id, status);
 };
 
 const createNewTicket = async ({ title, description, priority, userId }) => {
@@ -75,26 +79,42 @@ const createNewTicket = async ({ title, description, priority, userId }) => {
     throw new Error("La prioridad debe ser baja, media o alta");
   }
 
-  return await createTicket({
+  const newTicket = await createTicket({
     title,
     description,
     priority,
     userId,
   });
+
+  await createTicketMessage({
+    ticketId: newTicket.id,
+    senderId: userId,
+    senderRole: "user",
+    message: description,
+  });
+
+  return newTicket;
 };
 
 const deleteTicketService = async (id, currentUser) => {
   if (currentUser.role !== "agent") {
-    throw new Error("No tenés permisos para eliminar tickets");
+    throw new Error("No tenés permisos");
   }
 
-  const deleted = await deleteTicketById(id);
+  const ticket = await findTicketById(id);
 
-  if (!deleted) {
+  if (!ticket) {
     return null;
   }
 
-  return deleted;
+  if (
+    ticket.assigned_to !== null &&
+    Number(ticket.assigned_to) !== Number(currentUser.id)
+  ) {
+    throw new Error("No podés eliminar un ticket asignado a otro agente");
+  }
+
+  return await deleteTicketById(id);
 };
 
 const getMyTickets = async (userId) => {
@@ -115,6 +135,119 @@ const assignTicketService = async (ticketId, currentUser) => {
   return updated;
 };
 
+const addTicketMessageService = async (ticketId, message, currentUser) => {
+  if (!message || !message.trim()) {
+    throw new Error("El mensaje es obligatorio");
+  }
+
+  const ticket = await findTicketById(ticketId);
+
+  if (!ticket) {
+    return null;
+  }
+
+  if (
+    currentUser.role === "user" &&
+    Number(ticket.user_id) !== Number(currentUser.id)
+  ) {
+    throw new Error("No tenés permisos para escribir en este ticket");
+  }
+
+  if (
+    currentUser.role === "agent" &&
+    Number(ticket.assigned_to) !== Number(currentUser.id)
+  ) {
+    throw new Error("Solo el agente asignado puede responder este ticket");
+  }
+
+  const newMessage = await createTicketMessage({
+    ticketId,
+    senderId: currentUser.id,
+    senderRole: currentUser.role,
+    message,
+  });
+
+  if (currentUser.role === "agent") {
+    await updateTicketStatus(ticketId, "en control del cliente");
+  }
+
+  if (currentUser.role === "user") {
+    await updateTicketStatus(ticketId, "en control del agente");
+  }
+
+  return newMessage;
+};
+
+const getTicketMessagesService = async (ticketId, currentUser) => {
+  const ticket = await findTicketById(ticketId);
+
+  if (!ticket) {
+    return null;
+  }
+
+  if (
+    currentUser.role === "user" &&
+    Number(ticket.user_id) !== Number(currentUser.id)
+  ) {
+    throw new Error("No tenés permisos para ver los mensajes de este ticket");
+  }
+
+  return await findMessagesByTicketId(ticketId);
+};
+const closeTicketService = async (ticketId, currentUser) => {
+  const ticket = await findTicketById(ticketId);
+
+  if (!ticket) {
+    return null;
+  }
+
+  if (ticket.status === "cerrado") {
+    throw new Error("El ticket ya está cerrado");
+  }
+
+  // USER
+  if (currentUser.role === "user") {
+    if (Number(ticket.user_id) !== Number(currentUser.id)) {
+      throw new Error("No tenés permisos para cerrar este ticket");
+    }
+
+    if (
+      ticket.status !== "en control del cliente" &&
+      ticket.status !== "en control del agente"
+    ) {
+      throw new Error("No podés cerrar el ticket en este estado");
+    }
+  }
+
+  // AGENT
+  if (currentUser.role === "agent") {
+    if (Number(ticket.assigned_to) !== Number(currentUser.id)) {
+      throw new Error("Solo el agente asignado puede cerrar este ticket");
+    }
+
+    if (ticket.status === "en asignacion") {
+      throw new Error("No podés cerrar un ticket sin analizar");
+    }
+  }
+
+  const closed = await closeTicket(ticketId, currentUser.id);
+
+  // mensaje automático
+  await createTicketMessage({
+    ticketId,
+    senderId: currentUser.id,
+    senderRole: currentUser.role,
+    message:
+      currentUser.role === "user"
+        ? "El cliente indicó que la respuesta fue satisfactoria y cerró el ticket."
+        : "El agente cerró el ticket.",
+  });
+
+  return closed;
+};
+
+
+
 module.exports = {
   getAllTicketsService,
   getTicketById,
@@ -123,4 +256,7 @@ module.exports = {
   deleteTicketService,
   getMyTickets,
   assignTicketService,
+  addTicketMessageService,
+  getTicketMessagesService,
+  closeTicketService,
 };

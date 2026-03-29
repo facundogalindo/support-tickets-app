@@ -10,6 +10,9 @@ const {
   getMyTicketsController,
   getAllTicketsController,
   assignTicketController,
+  addTicketMessageController,
+  getTicketMessagesController,
+  closeTicketController,
 } = require("../controllers/ticket.controller");
 
 const router = express.Router();
@@ -19,9 +22,45 @@ router.get("/", authMiddleware, roleMiddleware("agent"), getAllTicketsController
 router.get("/:id", authMiddleware, getTicket);
 
 router.post("/", authMiddleware, roleMiddleware("user"), createTicket);
-router.patch("/:id/status", authMiddleware, roleMiddleware("agent"), updateTicketStatusController);
-router.delete("/:id", authMiddleware, roleMiddleware("agent"), deleteTicketController);
 
-router.patch("/:id/assign",authMiddleware,roleMiddleware("agent"),assignTicketController);
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  roleMiddleware("agent"),
+  updateTicketStatusController
+);
+
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware("agent"),
+  deleteTicketController
+);
+
+router.patch(
+  "/:id/assign",
+  authMiddleware,
+  roleMiddleware("agent"),
+  assignTicketController
+);
+
+router.get(
+  "/:id/messages",
+  authMiddleware,
+  getTicketMessagesController
+);
+
+router.post(
+  "/:id/messages",
+  authMiddleware,
+  addTicketMessageController
+);
+
+
+router.patch(
+  "/:id/close",
+  authMiddleware,
+  closeTicketController
+);
 
 module.exports = router;
