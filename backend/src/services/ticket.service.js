@@ -6,7 +6,7 @@ const {
   deleteTicketById,
   findTicketsByUserId,
   assignTicket,
-  closeTicket
+  closeTicket,
 } = require("../repositories/ticket.repository");
 
 const {
@@ -33,39 +33,6 @@ const getTicketById = async (id, currentUser) => {
   }
 
   return ticket;
-};
-
-const updateTicketStatusService = async (id, status, currentUser) => {
-  if (currentUser.role !== "agent") {
-    throw new Error("No tenés permisos");
-  }
-
-  const ticket = await findTicketById(id);
-
-  if (!ticket) {
-    return null;
-  }
-
-  if (
-    ticket.assigned_to !== null &&
-    Number(ticket.assigned_to) !== Number(currentUser.id)
-  ) {
-    throw new Error("No podés modificar un ticket asignado a otro agente");
-  }
-
-  const validTransitions = {
-    "en asignacion": ["en analisis"],
-    "en analisis": ["cerrado"],
-    "en control del cliente": ["cerrado"],
-    "en control del agente": ["cerrado"],
-    cerrado: [],
-  };
-
-  if (!validTransitions[ticket.status]?.includes(status)) {
-    throw new Error("Transición inválida");
-  }
-
-  return await updateTicketStatus(id, status);
 };
 
 const createNewTicket = async ({ title, description, priority, userId }) => {
@@ -194,6 +161,7 @@ const getTicketMessagesService = async (ticketId, currentUser) => {
 
   return await findMessagesByTicketId(ticketId);
 };
+
 const closeTicketService = async (ticketId, currentUser) => {
   const ticket = await findTicketById(ticketId);
 
@@ -205,7 +173,6 @@ const closeTicketService = async (ticketId, currentUser) => {
     throw new Error("El ticket ya está cerrado");
   }
 
-  // USER
   if (currentUser.role === "user") {
     if (Number(ticket.user_id) !== Number(currentUser.id)) {
       throw new Error("No tenés permisos para cerrar este ticket");
@@ -219,7 +186,6 @@ const closeTicketService = async (ticketId, currentUser) => {
     }
   }
 
-  // AGENT
   if (currentUser.role === "agent") {
     if (Number(ticket.assigned_to) !== Number(currentUser.id)) {
       throw new Error("Solo el agente asignado puede cerrar este ticket");
@@ -232,7 +198,6 @@ const closeTicketService = async (ticketId, currentUser) => {
 
   const closed = await closeTicket(ticketId, currentUser.id);
 
-  // mensaje automático
   await createTicketMessage({
     ticketId,
     senderId: currentUser.id,
@@ -246,13 +211,10 @@ const closeTicketService = async (ticketId, currentUser) => {
   return closed;
 };
 
-
-
 module.exports = {
   getAllTicketsService,
   getTicketById,
   createNewTicket,
-  updateTicketStatusService,
   deleteTicketService,
   getMyTickets,
   assignTicketService,

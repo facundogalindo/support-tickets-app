@@ -5,7 +5,6 @@ const roleMiddleware = require("../middlewares/role.middleware");
 const {
   getTicket,
   createTicket,
-  updateTicketStatusController,
   deleteTicketController,
   getMyTicketsController,
   getAllTicketsController,
@@ -23,12 +22,6 @@ router.get("/:id", authMiddleware, getTicket);
 
 router.post("/", authMiddleware, roleMiddleware("user"), createTicket);
 
-router.patch(
-  "/:id/status",
-  authMiddleware,
-  roleMiddleware("agent"),
-  updateTicketStatusController
-);
 
 router.delete(
   "/:id",
@@ -57,10 +50,6 @@ router.post(
 );
 
 
-router.patch(
-  "/:id/close",
-  authMiddleware,
-  closeTicketController
-);
+router.patch("/:id/close", authMiddleware, closeTicketController);
 
 module.exports = router;

@@ -1,14 +1,13 @@
 const {
   getTicketById,
   createNewTicket,
-  updateTicketStatusService,
   deleteTicketService,
   getMyTickets,
   getAllTicketsService,
   assignTicketService,
   addTicketMessageService,
   getTicketMessagesService,
-  closeTicketService
+  closeTicketService,
 } = require("../services/ticket.service");
 
 const getTicket = async (req, res) => {
@@ -24,34 +23,6 @@ const getTicket = async (req, res) => {
   } catch (error) {
     if (error.message === "No tenés permisos para ver este ticket") {
       return res.status(403).json({ message: error.message });
-    }
-
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const updateTicketStatusController = async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const { status } = req.body;
-
-    const updated = await updateTicketStatusService(id, status, req.user);
-
-    if (!updated) {
-      return res.status(404).json({ message: "Ticket no encontrado" });
-    }
-
-    res.json(updated);
-  } catch (error) {
-    if (
-      error.message === "No tenés permisos" ||
-      error.message === "No podés modificar un ticket asignado a otro agente"
-    ) {
-      return res.status(403).json({ message: error.message });
-    }
-
-    if (error.message === "Transición inválida") {
-      return res.status(400).json({ message: error.message });
     }
 
     res.status(500).json({ message: error.message });
@@ -186,6 +157,7 @@ const getTicketMessagesController = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 const closeTicketController = async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -216,15 +188,15 @@ const closeTicketController = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = {
   getTicket,
   createTicket,
-  updateTicketStatusController,
   deleteTicketController,
   getMyTicketsController,
   getAllTicketsController,
   assignTicketController,
   addTicketMessageController,
   getTicketMessagesController,
-  closeTicketController
+  closeTicketController,
 };

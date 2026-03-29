@@ -5,11 +5,9 @@ type TicketCardProps = {
   ticket: Ticket;
   currentUserId?: number;
   handleDelete?: (id: number) => Promise<void>;
-  handleStatusChange?: (id: number, currentStatus: string) => Promise<void>;
   onAssign?: (id: number) => Promise<void>;
   showActions?: boolean;
   isDeleting?: boolean;
-  isUpdating?: boolean;
   isAssigning?: boolean;
   assignedTo?: number | null;
 };
@@ -18,16 +16,12 @@ function TicketCard({
   ticket,
   currentUserId,
   handleDelete,
-  handleStatusChange,
   onAssign,
   showActions = false,
   isDeleting = false,
-  isUpdating = false,
   isAssigning = false,
   assignedTo,
 }: TicketCardProps) {
-  const canChangeStatus = ticket.status !== "cerrado";
-
   const isUnassigned = assignedTo == null;
   const hasAgentContext = currentUserId !== undefined;
 
@@ -47,29 +41,30 @@ function TicketCard({
     alta: "bg-red-100 text-red-700",
   };
 
-const statusStyles = {
-  "en asignacion": "bg-blue-100 text-blue-700",
-  "en analisis": "bg-purple-100 text-purple-700",
-  "en control del cliente": "bg-orange-100 text-orange-700",
-  "en control del agente": "bg-indigo-100 text-indigo-700",
-  cerrado: "bg-slate-200 text-slate-700",
-};
+  const statusStyles = {
+    "en asignacion": "bg-blue-100 text-blue-700",
+    "en analisis": "bg-purple-100 text-purple-700",
+    "en control del cliente": "bg-orange-100 text-orange-700",
+    "en control del agente": "bg-indigo-100 text-indigo-700",
+    cerrado: "bg-slate-200 text-slate-700",
+  };
 
-const assignmentLabel = isUnassigned
-  ? "Sin asignar"
-  : hasAgentContext
-  ? isAssignedToMe
-    ? "Asignado a mí"
-    : "Asignado a otro"
-  : "Asignado";
+  const assignmentLabel = isUnassigned
+    ? "Sin asignar"
+    : hasAgentContext
+    ? isAssignedToMe
+      ? "Asignado a mí"
+      : "Asignado a otro"
+    : "Asignado";
 
-const assignmentStyles = isUnassigned
-  ? "bg-slate-100 text-slate-700"
-  : hasAgentContext
-  ? isAssignedToMe
-    ? "bg-emerald-100 text-emerald-700"
-    : "bg-orange-100 text-orange-700"
-  : "bg-emerald-100 text-emerald-700";
+  const assignmentStyles = isUnassigned
+    ? "bg-slate-100 text-slate-700"
+    : hasAgentContext
+    ? isAssignedToMe
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-orange-100 text-orange-700"
+    : "bg-emerald-100 text-emerald-700";
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -124,7 +119,7 @@ const assignmentStyles = isUnassigned
           {onAssign && isUnassigned && (
             <button
               onClick={() => onAssign(ticket.id)}
-              disabled={isAssigning || isDeleting || isUpdating}
+              disabled={isAssigning || isDeleting}
               className="flex-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isAssigning ? "Asignando..." : "Tomar ticket"}
@@ -134,20 +129,10 @@ const assignmentStyles = isUnassigned
           {handleDelete && canManageTicket && (
             <button
               onClick={() => handleDelete(ticket.id)}
-              disabled={isDeleting || isUpdating || isAssigning}
+              disabled={isDeleting || isAssigning}
               className="flex-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isDeleting ? "Eliminando..." : "Eliminar"}
-            </button>
-          )}
-
-          {handleStatusChange && canManageTicket && canChangeStatus && (
-            <button
-              onClick={() => handleStatusChange(ticket.id, ticket.status)}
-              disabled={isDeleting || isUpdating || isAssigning}
-              className="flex-1 rounded-xl border border-slate-300 bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isUpdating ? "Actualizando..." : "Cambiar estado"}
             </button>
           )}
         </div>

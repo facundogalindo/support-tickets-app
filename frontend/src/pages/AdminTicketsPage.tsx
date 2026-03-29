@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   deleteTicketRequest,
   getAllTicketsRequest,
-  updateTicketStatusRequest,
   assignTicketRequest,
 } from "../services/ticketService";
 
@@ -23,7 +22,6 @@ function AdminTicketsPage() {
 
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
 
   const getTickets = async () => {
@@ -57,25 +55,6 @@ function AdminTicketsPage() {
       console.error("Error al eliminar ticket:", error);
     } finally {
       setDeletingId(null);
-    }
-  };
-
-  const getNextStatus = (currentStatus: string) => {
-    if (currentStatus === "abierto") return "en progreso";
-    if (currentStatus === "en progreso") return "cerrado";
-    return "cerrado";
-  };
-
-  const handleStatusChange = async (id: number, currentStatus: string) => {
-    try {
-      setUpdatingId(id);
-      const nextStatus = getNextStatus(currentStatus);
-      await updateTicketStatusRequest(id, nextStatus);
-      await getTickets();
-    } catch (error) {
-      console.error("Error al actualizar estado:", error);
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -123,7 +102,6 @@ function AdminTicketsPage() {
             </p>
           </div>
 
-          {/* FILTROS */}
           <section className="space-y-6">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-4">
@@ -143,8 +121,14 @@ function AdminTicketsPage() {
                     className="w-full rounded-xl border px-4 py-3"
                   >
                     <option value="todos">Todos</option>
-                    <option value="abierto">Abierto</option>
-                    <option value="en progreso">En progreso</option>
+                    <option value="en asignacion">En asignación</option>
+                    <option value="en analisis">En análisis</option>
+                    <option value="en control del cliente">
+                      En control del cliente
+                    </option>
+                    <option value="en control del agente">
+                      En control del agente
+                    </option>
                     <option value="cerrado">Cerrado</option>
                   </select>
                 </div>
@@ -155,9 +139,7 @@ function AdminTicketsPage() {
                   </label>
                   <select
                     value={assignmentFilter}
-                    onChange={(e) =>
-                      setAssignmentFilter(e.target.value)
-                    }
+                    onChange={(e) => setAssignmentFilter(e.target.value)}
                     className="w-full rounded-xl border px-4 py-3"
                   >
                     <option value="todos">Todos</option>
@@ -181,16 +163,13 @@ function AdminTicketsPage() {
               </div>
             </div>
 
-            {/* LISTADO */}
             {loading ? (
               <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
                 <LoadingSpinner />
               </div>
             ) : filteredTickets.length === 0 ? (
               <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-                <p className="text-slate-500">
-                  No hay tickets disponibles
-                </p>
+                <p className="text-slate-500">No hay tickets disponibles</p>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -200,10 +179,8 @@ function AdminTicketsPage() {
                     ticket={ticket}
                     currentUserId={Number(user?.id)}
                     handleDelete={handleDelete}
-                    handleStatusChange={handleStatusChange}
                     showActions={true}
                     isDeleting={deletingId === ticket.id}
-                    isUpdating={updatingId === ticket.id}
                     onAssign={handleAssign}
                     isAssigning={assigningId === ticket.id}
                     assignedTo={ticket.assigned_to}

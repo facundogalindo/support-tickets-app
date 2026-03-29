@@ -35,6 +35,11 @@ export const getAllTicketsRequest = async (): Promise<Ticket[]> => {
   return response.data.map(mapTicket);
 };
 
+export const getTicketRequest = async (id: number): Promise<Ticket> => {
+  const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
+  return mapTicket(response.data);
+};
+
 export const createTicketRequest = async (ticketData: {
   title: string;
   description: string;
@@ -44,25 +49,12 @@ export const createTicketRequest = async (ticketData: {
   return mapTicket(response.data);
 };
 
-export const updateTicketStatusRequest = async (
-  id: number,
-  status: string
-): Promise<Ticket> => {
-  const response = await axios.patch(
-    `${API_URL}/${id}/status`,
-    { status },
-    getAuthHeaders()
-  );
-
-  return mapTicket(response.data);
-};
-
 export const deleteTicketRequest = async (id: number): Promise<Ticket> => {
   const response = await axios.delete(`${API_URL}/${id}`, getAuthHeaders());
   return mapTicket(response.data);
 };
 
-export const assignTicketRequest = async (id: number) => {
+export const assignTicketRequest = async (id: number): Promise<Ticket> => {
   const response = await axios.patch(
     `${API_URL}/${id}/assign`,
     {},
@@ -91,6 +83,7 @@ export const addTicketMessageRequest = async (
 
   return response.data;
 };
+
 export const closeTicketRequest = async (id: number): Promise<Ticket> => {
   const response = await axios.patch(
     `${API_URL}/${id}/close`,
@@ -98,9 +91,5 @@ export const closeTicketRequest = async (id: number): Promise<Ticket> => {
     getAuthHeaders()
   );
 
-  return mapTicket(response.data);
-};
-export const getTicketRequest = async (id: number): Promise<Ticket> => {
-  const response = await axios.get(`${API_URL}/${id}`, getAuthHeaders());
   return mapTicket(response.data);
 };
