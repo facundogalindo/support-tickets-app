@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-
+require("./observers/ticketStatusEmailObserver");
 const ticketRoutes = require("./routes/ticket.routes");
 const authRoutes = require("./routes/auth.routes");
 
@@ -15,5 +15,6 @@ app.get("/", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/tickets", ticketRoutes);
+
 
 module.exports = app;

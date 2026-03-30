@@ -2,22 +2,24 @@ const pool = require("../config/db");
 
 const findTicketById = async (id) => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at
     FROM tickets
-    WHERE id = $1;
+    WHERE id = $1
+      AND deleted_at IS NULL;
   `;
 
   const result = await pool.query(query, [id]);
   return result.rows[0];
 };
-const createTicket = async ({ title, description, priority, userId }) => {
+
+const createTicket = async ({ title, description, priority, userId, status }) => {
   const query = `
     INSERT INTO tickets (title, description, priority, status, user_id)
-    VALUES ($1, $2, $3, 'en asignacion', $4)
-    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at;
   `;
 
-  const values = [title, description, priority, userId];
+  const values = [title, description, priority, status, userId];
   const result = await pool.query(query, values);
 
   return result.rows[0];
@@ -28,7 +30,8 @@ const updateTicketStatus = async (id, status) => {
     UPDATE tickets
     SET status = $1
     WHERE id = $2
-    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
+      AND deleted_at IS NULL
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at;
   `;
 
   const values = [status, id];
@@ -39,9 +42,11 @@ const updateTicketStatus = async (id, status) => {
 
 const deleteTicketById = async (id) => {
   const query = `
-    DELETE FROM tickets
+    UPDATE tickets
+    SET deleted_at = CURRENT_TIMESTAMP
     WHERE id = $1
-    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
+      AND deleted_at IS NULL
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at;
   `;
 
   const result = await pool.query(query, [id]);
@@ -50,9 +55,10 @@ const deleteTicketById = async (id) => {
 
 const findTicketsByUserId = async (userId) => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at
     FROM tickets
     WHERE user_id = $1
+      AND deleted_at IS NULL
     ORDER BY created_at DESC;
   `;
 
@@ -62,39 +68,56 @@ const findTicketsByUserId = async (userId) => {
 
 const findAllTickets = async () => {
   const query = `
-    SELECT id, title, description, priority, status, created_at, user_id, assigned_to
+    SELECT id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at
     FROM tickets
+    WHERE deleted_at IS NULL
     ORDER BY created_at DESC;
   `;
 
   const result = await pool.query(query);
   return result.rows;
 };
-const assignTicket = async (ticketId, agentId) => {
+
+const assignTicket = async (ticketId, agentId, status) => {
   const query = `
     UPDATE tickets
     SET assigned_to = $1,
-        status = 'en analisis'
-    WHERE id = $2 AND assigned_to IS NULL
-    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to;
+        status = $2
+    WHERE id = $3
+      AND assigned_to IS NULL
+      AND deleted_at IS NULL
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, deleted_at;
   `;
 
-  const result = await pool.query(query, [agentId, ticketId]);
+  const result = await pool.query(query, [agentId, status, ticketId]);
   return result.rows[0];
 };
-const closeTicket = async (ticketId, userId) => {
+
+const closeTicket = async (ticketId, userId, status) => {
   const query = `
     UPDATE tickets
-    SET status = 'cerrado',
-        closed_by = $1,
+    SET status = $1,
+        closed_by = $2,
         closed_at = CURRENT_TIMESTAMP
-    WHERE id = $2
-    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, closed_by, closed_at;
+    WHERE id = $3
+      AND deleted_at IS NULL
+    RETURNING id, title, description, priority, status, created_at, user_id, assigned_to, closed_by, closed_at, deleted_at;
   `;
 
-  const result = await pool.query(query, [userId, ticketId]);
+  const result = await pool.query(query, [status, userId, ticketId]);
   return result.rows[0];
 };
+const findUserById = async (id) => {
+  const query = `
+    SELECT id, name, email, role, created_at
+    FROM users
+    WHERE id = $1;
+  `;
+
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
+
 module.exports = {
   findAllTickets,
   findTicketById,
@@ -104,4 +127,5 @@ module.exports = {
   findTicketsByUserId,
   assignTicket,
   closeTicket,
+  findUserById
 };

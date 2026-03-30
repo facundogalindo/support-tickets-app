@@ -9,10 +9,17 @@ const {
   closeTicket,
 } = require("../repositories/ticket.repository");
 
+const eventBus = require("../utils/eventBus");
+
 const {
   createTicketMessage,
   findMessagesByTicketId,
 } = require("../repositories/ticket-message.repository");
+
+const {
+  TicketEvents,
+  resolveTicketState,
+} = require("../utils/ticketStateResolver");
 
 const getAllTicketsService = async () => {
   return await findAllTickets();
@@ -46,11 +53,14 @@ const createNewTicket = async ({ title, description, priority, userId }) => {
     throw new Error("La prioridad debe ser baja, media o alta");
   }
 
+  const initialStatus = resolveTicketState(TicketEvents.CREATED);
+
   const newTicket = await createTicket({
     title,
     description,
     priority,
     userId,
+    status: initialStatus,
   });
 
   await createTicketMessage({
@@ -81,7 +91,13 @@ const deleteTicketService = async (id, currentUser) => {
     throw new Error("No podés eliminar un ticket asignado a otro agente");
   }
 
-  return await deleteTicketById(id);
+  const deletedTicket = await deleteTicketById(id);
+
+  if (!deletedTicket) {
+    return null;
+  }
+
+  return deletedTicket;
 };
 
 const getMyTickets = async (userId) => {
@@ -93,11 +109,27 @@ const assignTicketService = async (ticketId, currentUser) => {
     throw new Error("Solo los agentes pueden asignarse tickets");
   }
 
-  const updated = await assignTicket(ticketId, currentUser.id);
+  const ticket = await findTicketById(ticketId);
+
+  if (!ticket) {
+    return null;
+  }
+
+  const previousStatus = ticket.status;
+  const assignedStatus = resolveTicketState(TicketEvents.ASSIGNED);
+
+  const updated = await assignTicket(ticketId, currentUser.id, assignedStatus);
 
   if (!updated) {
     throw new Error("El ticket ya fue asignado");
   }
+
+  await eventBus.emit("ticket.status.changed", {
+    ticket: updated,
+    previousStatus,
+    newStatus: updated.status,
+    triggeredBy: currentUser,
+  });
 
   return updated;
 };
@@ -127,6 +159,8 @@ const addTicketMessageService = async (ticketId, message, currentUser) => {
     throw new Error("Solo el agente asignado puede responder este ticket");
   }
 
+  const previousStatus = ticket.status;
+
   const newMessage = await createTicketMessage({
     ticketId,
     senderId: currentUser.id,
@@ -134,13 +168,21 @@ const addTicketMessageService = async (ticketId, message, currentUser) => {
     message,
   });
 
-  if (currentUser.role === "agent") {
-    await updateTicketStatus(ticketId, "en control del cliente");
-  }
+  const event =
+    currentUser.role === "agent"
+      ? TicketEvents.AGENT_REPLY
+      : TicketEvents.USER_REPLY;
 
-  if (currentUser.role === "user") {
-    await updateTicketStatus(ticketId, "en control del agente");
-  }
+  const newStatus = resolveTicketState(event);
+
+  const updatedTicket = await updateTicketStatus(ticketId, newStatus);
+
+  await eventBus.emit("ticket.status.changed", {
+    ticket: updatedTicket,
+    previousStatus,
+    newStatus: updatedTicket.status,
+    triggeredBy: currentUser,
+  });
 
   return newMessage;
 };
@@ -196,7 +238,10 @@ const closeTicketService = async (ticketId, currentUser) => {
     }
   }
 
-  const closed = await closeTicket(ticketId, currentUser.id);
+  const previousStatus = ticket.status;
+  const closedStatus = resolveTicketState(TicketEvents.CLOSED);
+
+  const closed = await closeTicket(ticketId, currentUser.id, closedStatus);
 
   await createTicketMessage({
     ticketId,
@@ -206,6 +251,13 @@ const closeTicketService = async (ticketId, currentUser) => {
       currentUser.role === "user"
         ? "El cliente indicó que la respuesta fue satisfactoria y cerró el ticket."
         : "El agente cerró el ticket.",
+  });
+
+  await eventBus.emit("ticket.status.changed", {
+    ticket: closed,
+    previousStatus,
+    newStatus: closed.status,
+    triggeredBy: currentUser,
   });
 
   return closed;

@@ -8,11 +8,11 @@ const createUser = async ({ name, email, passwordHash, role }) => {
   `;
 
   const values = [name, email, passwordHash, role];
-
   const result = await pool.query(query, values);
 
   return result.rows[0];
 };
+
 const findUserByEmail = async (email) => {
   const query = `
     SELECT * FROM users
@@ -20,9 +20,20 @@ const findUserByEmail = async (email) => {
   `;
 
   const result = await pool.query(query, [email]);
-
   return result.rows[0];
 };
+
+const findUserById = async (id) => {
+  const query = `
+    SELECT id, name, email, role, created_at
+    FROM users
+    WHERE id = $1;
+  `;
+
+  const result = await pool.query(query, [id]);
+  return result.rows[0];
+};
+
 const findTicketsByUserId = async (userId) => {
   const query = `
     SELECT id, title, description, priority, status, created_at, user_id
@@ -34,6 +45,7 @@ const findTicketsByUserId = async (userId) => {
   const result = await pool.query(query, [userId]);
   return result.rows;
 };
+
 const findAllTickets = async () => {
   const query = `
     SELECT id, title, description, priority, status, created_at, user_id
@@ -48,6 +60,7 @@ const findAllTickets = async () => {
 module.exports = {
   createUser,
   findUserByEmail,
+  findUserById,
   findTicketsByUserId,
-  findAllTickets
-}
+  findAllTickets,
+};
