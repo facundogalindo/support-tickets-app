@@ -1,9 +1,10 @@
-const nodemailer = require("nodemailer");
 require("dotenv").config();
+const nodemailer = require("nodemailer");
+
+const isProduction = process.env.NODE_ENV === "production";
+
 const transporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: Number(process.env.MAIL_PORT),
-  secure: false,
+  service: "gmail",
   auth: {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
@@ -11,6 +12,13 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendMail = async ({ to, subject, html }) => {
+  if (isProduction) {
+    console.log(
+      `[MAIL DESACTIVADO EN PRODUCCION] To: ${to} | Subject: ${subject}`
+    );
+    return;
+  }
+
   const info = await transporter.sendMail({
     from: process.env.MAIL_FROM,
     to,
@@ -19,9 +27,6 @@ const sendMail = async ({ to, subject, html }) => {
   });
 
   console.log("Mail enviado:", info.messageId);
-  console.log("MAIL_HOST:", process.env.MAIL_HOST);
-console.log("MAIL_PORT:", process.env.MAIL_PORT);
-console.log("MAIL_USER:", process.env.MAIL_USER);
 };
 
 module.exports = {
