@@ -1,3 +1,5 @@
+const pool = require("../config/db");
+
 const {
   findAllTickets,
   findTicketById,
@@ -9,12 +11,16 @@ const {
   closeTicket,
 } = require("../repositories/ticket.repository");
 
-const eventBus = require("../utils/eventBus");
-
 const {
   createTicketMessage,
   findMessagesByTicketId,
 } = require("../repositories/ticket-message.repository");
+
+const {
+  createTicketTransaction,
+} = require("../repositories/ticketTransaction.repository");
+
+const eventBus = require("../utils/eventBus");
 
 const {
   TicketEvents,
@@ -53,24 +59,55 @@ const createNewTicket = async ({ title, description, priority, userId }) => {
     throw new Error("La prioridad debe ser baja, media o alta");
   }
 
-  const initialStatus = resolveTicketState(TicketEvents.CREATED);
+  const client = await pool.connect();
 
-  const newTicket = await createTicket({
-    title,
-    description,
-    priority,
-    userId,
-    status: initialStatus,
-  });
+  try {
+    await client.query("BEGIN");
 
-  await createTicketMessage({
-    ticketId: newTicket.id,
-    senderId: userId,
-    senderRole: "user",
-    message: description,
-  });
+    const initialStatus = resolveTicketState(TicketEvents.CREATED);
 
-  return newTicket;
+    const newTicket = await createTicket(
+      {
+        title,
+        description,
+        priority,
+        userId,
+        status: initialStatus,
+      },
+      client
+    );
+
+    await createTicketMessage(
+      {
+        ticketId: newTicket.id,
+        senderId: userId,
+        senderRole: "user",
+        message: description,
+      },
+      client
+    );
+
+    await createTicketTransaction(
+      {
+        ticketId: newTicket.id,
+        action: "CREATED",
+        fieldName: null,
+        oldValue: null,
+        newValue: null,
+        performedBy: userId,
+      },
+      client
+    );
+
+    await client.query("COMMIT");
+
+    return newTicket;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const deleteTicketService = async (id, currentUser) => {
@@ -118,20 +155,50 @@ const assignTicketService = async (ticketId, currentUser) => {
   const previousStatus = ticket.status;
   const assignedStatus = resolveTicketState(TicketEvents.ASSIGNED);
 
-  const updated = await assignTicket(ticketId, currentUser.id, assignedStatus);
+  const client = await pool.connect();
 
-  if (!updated) {
-    throw new Error("El ticket ya fue asignado");
+  try {
+    await client.query("BEGIN");
+
+    const updated = await assignTicket(
+      ticketId,
+      currentUser.id,
+      assignedStatus,
+      client
+    );
+
+    if (!updated) {
+      throw new Error("El ticket ya fue asignado");
+    }
+
+    await createTicketTransaction(
+      {
+        ticketId: updated.id,
+        action: "STATUS_CHANGED",
+        fieldName: "status",
+        oldValue: previousStatus,
+        newValue: updated.status,
+        performedBy: currentUser.id,
+      },
+      client
+    );
+
+    await client.query("COMMIT");
+
+    await eventBus.emit("ticket.status.changed", {
+      ticket: updated,
+      previousStatus,
+      newStatus: updated.status,
+      triggeredBy: currentUser,
+    });
+
+    return updated;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-
-  await eventBus.emit("ticket.status.changed", {
-    ticket: updated,
-    previousStatus,
-    newStatus: updated.status,
-    triggeredBy: currentUser,
-  });
-
-  return updated;
 };
 
 const addTicketMessageService = async (ticketId, message, currentUser) => {
@@ -161,13 +228,6 @@ const addTicketMessageService = async (ticketId, message, currentUser) => {
 
   const previousStatus = ticket.status;
 
-  const newMessage = await createTicketMessage({
-    ticketId,
-    senderId: currentUser.id,
-    senderRole: currentUser.role,
-    message,
-  });
-
   const event =
     currentUser.role === "agent"
       ? TicketEvents.AGENT_REPLY
@@ -175,16 +235,51 @@ const addTicketMessageService = async (ticketId, message, currentUser) => {
 
   const newStatus = resolveTicketState(event);
 
-  const updatedTicket = await updateTicketStatus(ticketId, newStatus);
+  const client = await pool.connect();
 
-  await eventBus.emit("ticket.status.changed", {
-    ticket: updatedTicket,
-    previousStatus,
-    newStatus: updatedTicket.status,
-    triggeredBy: currentUser,
-  });
+  try {
+    await client.query("BEGIN");
 
-  return newMessage;
+    const newMessage = await createTicketMessage(
+      {
+        ticketId,
+        senderId: currentUser.id,
+        senderRole: currentUser.role,
+        message,
+      },
+      client
+    );
+
+    const updatedTicket = await updateTicketStatus(ticketId, newStatus, client);
+
+    await createTicketTransaction(
+      {
+        ticketId: ticketId,
+        action: "STATUS_CHANGED",
+        fieldName: "status",
+        oldValue: previousStatus,
+        newValue: updatedTicket.status,
+        performedBy: currentUser.id,
+      },
+      client
+    );
+
+    await client.query("COMMIT");
+
+    await eventBus.emit("ticket.status.changed", {
+      ticket: updatedTicket,
+      previousStatus,
+      newStatus: updatedTicket.status,
+      triggeredBy: currentUser,
+    });
+
+    return newMessage;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 const getTicketMessagesService = async (ticketId, currentUser) => {
@@ -241,26 +336,59 @@ const closeTicketService = async (ticketId, currentUser) => {
   const previousStatus = ticket.status;
   const closedStatus = resolveTicketState(TicketEvents.CLOSED);
 
-  const closed = await closeTicket(ticketId, currentUser.id, closedStatus);
+  const client = await pool.connect();
 
-  await createTicketMessage({
-    ticketId,
-    senderId: currentUser.id,
-    senderRole: currentUser.role,
-    message:
-      currentUser.role === "user"
-        ? "El cliente indicó que la respuesta fue satisfactoria y cerró el ticket."
-        : "El agente cerró el ticket.",
-  });
+  try {
+    await client.query("BEGIN");
 
-  await eventBus.emit("ticket.status.changed", {
-    ticket: closed,
-    previousStatus,
-    newStatus: closed.status,
-    triggeredBy: currentUser,
-  });
+    const closed = await closeTicket(
+      ticketId,
+      currentUser.id,
+      closedStatus,
+      client
+    );
 
-  return closed;
+    await createTicketMessage(
+      {
+        ticketId,
+        senderId: currentUser.id,
+        senderRole: currentUser.role,
+        message:
+          currentUser.role === "user"
+            ? "El cliente indicó que la respuesta fue satisfactoria y cerró el ticket."
+            : "El agente cerró el ticket.",
+      },
+      client
+    );
+
+    await createTicketTransaction(
+      {
+        ticketId: ticketId,
+        action: "STATUS_CHANGED",
+        fieldName: "status",
+        oldValue: previousStatus,
+        newValue: closed.status,
+        performedBy: currentUser.id,
+      },
+      client
+    );
+
+    await client.query("COMMIT");
+
+    await eventBus.emit("ticket.status.changed", {
+      ticket: closed,
+      previousStatus,
+      newStatus: closed.status,
+      triggeredBy: currentUser,
+    });
+
+    return closed;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 };
 
 module.exports = {
