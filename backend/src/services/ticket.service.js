@@ -254,7 +254,7 @@ const addTicketMessageService = async (ticketId, message, currentUser) => {
 
     await createTicketTransaction(
       {
-        ticketId: ticketId,
+        ticketId,
         action: "STATUS_CHANGED",
         fieldName: "status",
         oldValue: previousStatus,
@@ -363,7 +363,7 @@ const closeTicketService = async (ticketId, currentUser) => {
 
     await createTicketTransaction(
       {
-        ticketId: ticketId,
+        ticketId,
         action: "STATUS_CHANGED",
         fieldName: "status",
         oldValue: previousStatus,
