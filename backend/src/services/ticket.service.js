@@ -9,6 +9,10 @@ const {
   findTicketsByUserId,
   assignTicket,
   closeTicket,
+  getDashboardKpis,
+  getTicketsByStatusReport,
+  getTicketsByPriorityReport,
+  getResolutionDetailReport,
 } = require("../repositories/ticket.repository");
 
 const {
@@ -109,6 +113,83 @@ const createNewTicket = async ({ title, description, priority, userId }) => {
     client.release();
   }
 };
+const formatResolutionTime = (totalSeconds) => {
+  if (totalSeconds == null || Number.isNaN(totalSeconds)) {
+    return "Sin datos";
+  }
+
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+};
+
+const getResolutionTimeReportService = async ({
+  search = "",
+  from = null,
+  to = null,
+  page = 1,
+  limit = 10,
+}) => {
+  const safePage = Number(page) > 0 ? Number(page) : 1;
+  const safeLimit = Number(limit) > 0 ? Number(limit) : 10;
+
+  const filters = {
+    search,
+    from,
+    to,
+    page: safePage,
+    limit: safeLimit,
+  };
+
+  const summary = await getResolutionReportSummary(filters);
+  const tickets = await getResolvedTicketsWithTime(filters);
+
+  const totalItems = tickets.length > 0 ? tickets[0].total_items : 0;
+  const totalPages = Math.ceil(totalItems / safeLimit);
+
+  return {
+    filters: {
+      search,
+      from,
+      to,
+      page: safePage,
+      limit: safeLimit,
+    },
+    totalClosedTickets: summary?.total_closed_tickets ?? 0,
+    averageResolutionSeconds: summary?.average_resolution_seconds
+      ? Math.floor(summary.average_resolution_seconds)
+      : 0,
+    averageResolutionHuman: formatResolutionTime(
+      summary?.average_resolution_seconds
+        ? Math.floor(summary.average_resolution_seconds)
+        : 0
+    ),
+    pagination: {
+      page: safePage,
+      limit: safeLimit,
+      totalItems,
+      totalPages,
+      hasNextPage: safePage < totalPages,
+      hasPrevPage: safePage > 1,
+    },
+    tickets: tickets.map(({ total_items, ...ticket }) => ({
+      ...ticket,
+      resolution_human: formatResolutionTime(ticket.resolution_seconds),
+    })),
+  };
+};
+
 
 const deleteTicketService = async (id, currentUser) => {
   if (currentUser.role !== "agent") {
@@ -390,7 +471,127 @@ const closeTicketService = async (ticketId, currentUser) => {
     client.release();
   }
 };
+const buildPercentageItems = (items, total, keyName) => {
+  return items.map((item) => ({
+    [keyName]: item[keyName],
+    count: Number(item.count),
+    percentage:
+      total > 0 ? Number(((Number(item.count) / total) * 100).toFixed(2)) : 0,
+  }));
+};
 
+const normalizeDashboardFilters = ({
+  search = "",
+  closedFrom = null,
+  closedTo = null,
+  priority = "",
+  status = "",
+  page = 1,
+  limit = 10,
+} = {}) => {
+  return {
+    search,
+    closedFrom,
+    closedTo,
+    priority,
+    status,
+    page: Number(page) > 0 ? Number(page) : 1,
+    limit: Number(limit) > 0 ? Number(limit) : 10,
+  };
+};
+
+const getReportsDashboardService = async (rawFilters = {}) => {
+  const filters = normalizeDashboardFilters(rawFilters);
+
+  const globalFilters = {
+    search: filters.search,
+    closedFrom: filters.closedFrom,
+    closedTo: filters.closedTo,
+  };
+
+  const detailFilters = {
+    search: filters.search,
+    closedFrom: filters.closedFrom,
+    closedTo: filters.closedTo,
+    priority: filters.priority,
+    status: filters.status,
+    page: filters.page,
+    limit: filters.limit,
+  };
+
+  const [kpis, byStatusRows, byPriorityRows, resolutionRows] = await Promise.all([
+    getDashboardKpis(globalFilters),
+    getTicketsByStatusReport(globalFilters),
+    getTicketsByPriorityReport(globalFilters),
+    getResolutionDetailReport(detailFilters),
+  ]);
+
+  const totalTickets = Number(kpis?.total_tickets ?? 0);
+  const totalClosedTickets = Number(kpis?.closed_tickets ?? 0);
+
+  const totalResolutionItems =
+    resolutionRows.length > 0 ? Number(resolutionRows[0].total_items) : 0;
+
+  const totalResolutionPages = Math.ceil(totalResolutionItems / filters.limit);
+
+  return {
+    globalFilters: {
+      search: filters.search,
+      closedFrom: filters.closedFrom,
+      closedTo: filters.closedTo,
+    },
+    detailFilters: {
+      priority: filters.priority,
+      status: filters.status,
+    },
+    kpis: {
+      totalTickets,
+      closedTickets: totalClosedTickets,
+      averageResolutionSeconds: kpis?.average_resolution_seconds
+        ? Math.floor(kpis.average_resolution_seconds)
+        : 0,
+      averageResolutionHuman: formatResolutionTime(
+        kpis?.average_resolution_seconds
+          ? Math.floor(kpis.average_resolution_seconds)
+          : 0
+      ),
+      highPriorityTickets: Number(kpis?.high_priority_tickets ?? 0),
+      inAgentControlTickets: Number(kpis?.in_agent_control_tickets ?? 0),
+      inClientControlTickets: Number(kpis?.in_client_control_tickets ?? 0),
+    },
+    byStatus: {
+      total: totalTickets,
+      items: buildPercentageItems(byStatusRows, totalTickets, "status"),
+    },
+    byPriority: {
+      total: totalTickets,
+      items: buildPercentageItems(byPriorityRows, totalTickets, "priority"),
+    },
+    resolution: {
+      totalClosedTickets,
+      averageResolutionSeconds: kpis?.average_resolution_seconds
+        ? Math.floor(kpis.average_resolution_seconds)
+        : 0,
+      averageResolutionHuman: formatResolutionTime(
+        kpis?.average_resolution_seconds
+          ? Math.floor(kpis.average_resolution_seconds)
+          : 0
+      ),
+      pagination: {
+        page: filters.page,
+        limit: filters.limit,
+        totalItems: totalResolutionItems,
+        totalPages: totalResolutionPages,
+        hasNextPage: filters.page < totalResolutionPages,
+        hasPrevPage: filters.page > 1,
+      },
+      tickets: resolutionRows.map(({ total_items, ...ticket }) => ({
+        ...ticket,
+        resolution_human: formatResolutionTime(ticket.resolution_seconds),
+      })),
+    },
+  };
+};
 module.exports = {
   getAllTicketsService,
   getTicketById,
@@ -401,4 +602,5 @@ module.exports = {
   addTicketMessageService,
   getTicketMessagesService,
   closeTicketService,
+  getReportsDashboardService,
 };

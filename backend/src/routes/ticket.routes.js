@@ -12,6 +12,7 @@ const {
   addTicketMessageController,
   getTicketMessagesController,
   closeTicketController,
+  getReportsDashboardController,
 } = require("../controllers/ticket.controller");
 
 const router = express.Router();
@@ -48,6 +49,21 @@ router.post(
   authMiddleware,
   addTicketMessageController
 );
+
+/*router.get(
+  "/reports/resolution-time",
+  authMiddleware,
+  roleMiddleware("agent"),
+  getResolutionTimeReportController
+);*/
+
+router.get(
+  "/reports/dashboard",
+  authMiddleware,
+  roleMiddleware("agent"),
+  getReportsDashboardController
+);
+
 
 
 router.patch("/:id/close", authMiddleware, closeTicketController);

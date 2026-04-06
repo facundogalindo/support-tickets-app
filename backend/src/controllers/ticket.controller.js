@@ -8,6 +8,7 @@ const {
   addTicketMessageService,
   getTicketMessagesService,
   closeTicketService,
+  getReportsDashboardService,
 } = require("../services/ticket.service");
 
 const getTicket = async (req, res) => {
@@ -188,7 +189,50 @@ const closeTicketController = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getResolutionTimeReportController = async (req, res) => {
+  try {
+    const { search = "", from = null, to = null, page = 1, limit = 10 } = req.query;
 
+    const report = await getResolutionTimeReportService({
+      search,
+      from,
+      to,
+      page,
+      limit,
+    });
+
+    res.json(report);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const getReportsDashboardController = async (req, res) => {
+  try {
+    const {
+      search = "",
+      closedFrom = null,
+      closedTo = null,
+      priority = "",
+      status = "",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const dashboard = await getReportsDashboardService({
+      search,
+      closedFrom,
+      closedTo,
+      priority,
+      status,
+      page,
+      limit,
+    });
+
+    res.json(dashboard);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 module.exports = {
   getTicket,
   createTicket,
@@ -199,4 +243,5 @@ module.exports = {
   addTicketMessageController,
   getTicketMessagesController,
   closeTicketController,
+  getReportsDashboardController,
 };

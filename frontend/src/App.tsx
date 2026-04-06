@@ -6,6 +6,7 @@ import MyTicketsPage from "./pages/MyTicketsPage";
 import AdminTicketsPage from "./pages/AdminTicketsPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminReportsPage from "./pages/AdminReportsPage";
 
 function App() {
   return (
@@ -39,6 +40,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute allowedRoles={["agent"]}>
+            <AdminReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

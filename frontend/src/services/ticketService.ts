@@ -1,6 +1,20 @@
 import axios from "axios";
 import type { Ticket } from "../types/ticket";
 import type { TicketMessage } from "../types/ticketMessage";
+import type { ReportsDashboardResponse } from "../types/resolutionReport";
+
+type GetReportsDashboardParams = {
+  search?: string;
+  closedFrom?: string;
+  closedTo?: string;
+  priority?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+};
+
+
+
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const API_URL = `${API_BASE_URL}/tickets`;
@@ -67,7 +81,10 @@ export const assignTicketRequest = async (id: number): Promise<Ticket> => {
 export const getTicketMessagesRequest = async (
   id: number
 ): Promise<TicketMessage[]> => {
-  const response = await axios.get(`${API_URL}/${id}/messages`, getAuthHeaders());
+  const response = await axios.get(
+    `${API_URL}/${id}/messages`,
+    getAuthHeaders()
+  );
   return response.data;
 };
 
@@ -92,4 +109,25 @@ export const closeTicketRequest = async (id: number): Promise<Ticket> => {
   );
 
   return mapTicket(response.data);
+};
+
+
+
+export const getReportsDashboardRequest = async (
+  params: GetReportsDashboardParams = {}
+): Promise<ReportsDashboardResponse> => {
+  const response = await axios.get(`${API_URL}/reports/dashboard`, {
+    ...getAuthHeaders(),
+    params: {
+      search: params.search ?? "",
+      closedFrom: params.closedFrom ?? "",
+      closedTo: params.closedTo ?? "",
+      priority: params.priority ?? "",
+      status: params.status ?? "",
+      page: params.page ?? 1,
+      limit: params.limit ?? 10,
+    },
+  });
+
+  return response.data;
 };

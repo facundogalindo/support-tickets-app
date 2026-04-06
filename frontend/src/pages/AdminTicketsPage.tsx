@@ -3,6 +3,7 @@ import type { Ticket } from "../types/ticket";
 import Navbar from "../components/Navbar";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 import {
   deleteTicketRequest,
@@ -93,13 +94,22 @@ function AdminTicketsPage() {
 
       <main className="min-h-screen bg-slate-100">
         <div className="mx-auto max-w-6xl px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800">
-              Administración de tickets
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Gestioná todos los tickets del sistema
-            </p>
+          <div className="mb-8 flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800">
+                Administración de tickets
+              </h1>
+              <p className="mt-2 text-sm text-slate-500">
+                Gestioná todos los tickets del sistema
+              </p>
+            </div>
+
+            <Link
+              to="/admin/reports"
+              className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Reportes y Estadísticas
+            </Link>
           </div>
 
           <section className="space-y-6">
