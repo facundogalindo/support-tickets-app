@@ -7,8 +7,7 @@ It includes authentication, role-based access control, ticket lifecycle manageme
 
 ## 🚀 Live Demo
 
-Frontend: https://support-tickets-app.vercel.app/  
-Backend: https://support-tickets-app.onrender.com/
+ https://support-tickets-app.vercel.app/  
 
 ---
 
