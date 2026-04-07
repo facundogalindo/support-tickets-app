@@ -97,6 +97,9 @@ Report
 
 <img width="1194" height="905" alt="image" src="https://github.com/user-attachments/assets/74e04c00-6076-45b1-a212-a850f11a05e7" />
 
+Graphics
+
+<img width="925" height="832" alt="image" src="https://github.com/user-attachments/assets/8f1039f1-29ff-46a8-8f54-dd7a50f0812a" />
 
 
 
