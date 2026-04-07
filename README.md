@@ -93,6 +93,11 @@ Agent page
 
 <img width="1051" height="907" alt="image" src="https://github.com/user-attachments/assets/cf1774f7-3243-47b7-8359-a717230e6b17" />
 
+Report 
+
+<img width="1194" height="905" alt="image" src="https://github.com/user-attachments/assets/74e04c00-6076-45b1-a212-a850f11a05e7" />
+
+
 
 
 ## ⚙️ Installation
