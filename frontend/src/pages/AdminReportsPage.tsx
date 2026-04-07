@@ -157,15 +157,38 @@ function AdminReportsPage() {
     }
   };
 
+  const formatStatusLabel = (value: string) => {
+    const labels: Record<string, string> = {
+      cerrado: "Cerrado",
+      "en analisis": "En análisis",
+      "en asignacion": "En asignación",
+      "en control del agente": "Ctrl. agente",
+      "en control del cliente": "Ctrl. cliente",
+    };
+
+    return labels[value] || value;
+  };
+
+  const formatPriorityLabel = (value: string) => {
+    const labels: Record<string, string> = {
+      alta: "Alta",
+      media: "Media",
+      baja: "Baja",
+    };
+
+    return labels[value] || value;
+  };
+
   const statusChartData =
     graphsData?.byStatus.items.map((item) => ({
       name: item.status,
+      shortName: formatStatusLabel(item.status),
       cantidad: item.count,
     })) ?? [];
 
   const priorityChartData =
     graphsData?.byPriority.items.map((item) => ({
-      name: item.priority,
+      name: formatPriorityLabel(item.priority),
       value: item.count,
     })) ?? [];
 
@@ -499,13 +522,26 @@ function AdminReportsPage() {
                       </h3>
                     </div>
 
-                    <div className="h-[320px]">
+                    <div className="h-[380px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={statusChartData}>
+                        <BarChart
+                          data={statusChartData}
+                          margin={{ top: 10, right: 16, left: 0, bottom: 70 }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
+                          <XAxis
+                            dataKey="shortName"
+                            interval={0}
+                            angle={-18}
+                            textAnchor="end"
+                            height={70}
+                            tick={{ fontSize: 12 }}
+                          />
                           <YAxis allowDecimals={false} />
-                          <Tooltip />
+                          <Tooltip
+                            formatter={(value) => [value, "Cantidad"]}
+                            labelFormatter={(label) => `Estado: ${label}`}
+                          />
                           <Bar dataKey="cantidad" radius={[8, 8, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
@@ -517,7 +553,9 @@ function AdminReportsPage() {
                           key={item.status}
                           className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"
                         >
-                          <span className="text-slate-700">{item.status}</span>
+                          <span className="text-slate-700">
+                            {formatStatusLabel(item.status)}
+                          </span>
                           <span className="font-semibold text-slate-800">
                             {item.count} ({item.percentage}%)
                           </span>
@@ -533,7 +571,7 @@ function AdminReportsPage() {
                       </h3>
                     </div>
 
-                    <div className="h-[320px]">
+                    <div className="h-[380px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -541,7 +579,9 @@ function AdminReportsPage() {
                             dataKey="value"
                             nameKey="name"
                             outerRadius={110}
-                            label
+                            label={({ name, percent }) =>
+                              `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                            }
                           >
                             {priorityChartData.map((_, index) => (
                               <Cell
@@ -561,7 +601,9 @@ function AdminReportsPage() {
                           key={item.priority}
                           className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm"
                         >
-                          <span className="text-slate-700">{item.priority}</span>
+                          <span className="text-slate-700">
+                            {formatPriorityLabel(item.priority)}
+                          </span>
                           <span className="font-semibold text-slate-800">
                             {item.count} ({item.percentage}%)
                           </span>
