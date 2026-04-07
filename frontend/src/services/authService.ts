@@ -15,3 +15,24 @@ export const registerRequest = async (
   const response = await axios.post(`${API_URL}/register`, data);
   return response.data;
 };
+
+export const forgotPasswordRequest = async (
+  email: string
+): Promise<{ message: string }> => {
+  const response = await axios.post(`${API_URL}/forgot-password`, { email });
+  return response.data;
+};
+
+export const resetPasswordRequest = async ({
+  token,
+  newPassword,
+}: {
+  token: string;
+  newPassword: string;
+}): Promise<{ message: string }> => {
+  const response = await axios.post(`${API_URL}/reset-password`, {
+    token,
+    newPassword,
+  });
+  return response.data;
+};

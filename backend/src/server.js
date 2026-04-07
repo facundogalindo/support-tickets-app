@@ -14,4 +14,5 @@ pool
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log("NODE_ENV actual:", process.env.NODE_ENV);
 });

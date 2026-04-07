@@ -7,12 +7,16 @@ import AdminTicketsPage from "./pages/AdminTicketsPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminReportsPage from "./pages/AdminReportsPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route
         path="/my-tickets"
@@ -40,6 +44,7 @@ function App() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/admin/reports"
         element={
@@ -48,7 +53,6 @@ function App() {
           </ProtectedRoute>
         }
       />
-      
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

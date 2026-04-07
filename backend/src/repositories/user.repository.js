@@ -34,6 +34,46 @@ const findUserById = async (id) => {
   return result.rows[0];
 };
 
+const saveResetTokenByEmail = async (email, resetToken, expiresAt) => {
+  const query = `
+    UPDATE users
+    SET reset_token = $1,
+        reset_token_expires_at = $2
+    WHERE email = $3
+    RETURNING id, name, email, role, created_at, reset_token, reset_token_expires_at;
+  `;
+
+  const values = [resetToken, expiresAt, email];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
+const findUserByResetToken = async (resetToken) => {
+  const query = `
+    SELECT *
+    FROM users
+    WHERE reset_token = $1;
+  `;
+
+  const result = await pool.query(query, [resetToken]);
+  return result.rows[0];
+};
+
+const updatePasswordAndClearResetToken = async (userId, passwordHash) => {
+  const query = `
+    UPDATE users
+    SET password_hash = $1,
+        reset_token = NULL,
+        reset_token_expires_at = NULL
+    WHERE id = $2
+    RETURNING id, name, email, role, created_at;
+  `;
+
+  const values = [passwordHash, userId];
+  const result = await pool.query(query, values);
+  return result.rows[0];
+};
+
 const findTicketsByUserId = async (userId) => {
   const query = `
     SELECT id, title, description, priority, status, created_at, user_id
@@ -61,6 +101,9 @@ module.exports = {
   createUser,
   findUserByEmail,
   findUserById,
+  saveResetTokenByEmail,
+  findUserByResetToken,
+  updatePasswordAndClearResetToken,
   findTicketsByUserId,
   findAllTickets,
 };
